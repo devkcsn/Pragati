@@ -13,4 +13,5 @@ npm install dotenv
 now run the server.js file using cmd 
 write "node server.js" to run it on local host 3000
 
+admin access it not available for other users.
 for database info contact +918002029001 on whatsapp
