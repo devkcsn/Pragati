@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Pragati - Coordinator Login</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="icon" href="/assets/images/books-stack-of-three.png" type="image/x-icon">
+    <link rel="shortcut icon" href="books-stack-of-three.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <style media="screen">
+        /* Base Styles */
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-image: url('/assets/images/background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 0;
+        }
+        
+        .logo {
+            position: absolute;
+            z-index: 1;
+        }
+        
+        /* Container Layout */
+        .container {
+            display: flex;
+            width: 800px;
+            height: 520px;
+            position: absolute;
+            transform: translate(50%, -50%);
+            top: 50%;
+            right: 30%;
+            border-radius: 45px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .form-container {
+            background-color: rgba(255, 255, 255, 0.13);
+            padding: 40px 35px;
+            width: 60%;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .image-container {
+            width: 40%;
+            height: 100%;
+            background-image: url('/assets/images/coordinator-logo.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+        
+        /* Form Styling */
+        form * {
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            outline: none;
+            border: none;
+        }
+        
+        h3 {
+            position: absolute;
+            top: 20px;
+            left: 70%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 600;
+            z-index: 1;
+        }
+        
+        label {
+            display: block;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        /* Input Fields */
+        input {
+            display: block;
+            height: 50px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 45px;
+            padding: 0 15px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 300;
+            color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+        
+        input::placeholder {
+            color: #ffffff;
+            opacity: 0.8;
+        }
+        
+        input:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Password Field */
+        .password-container {
+            position: relative;
+        }
+        
+        .password-container input {
+            width: 100%;
+            padding-right: 40px;
+        }
+        
+        .password-container .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #ffffff;
+        }
+        
+        /* Button */
+        button {
+            margin-top: 30px;
+            width: 100%;
+            background-color: #ffffff;
+            color: #080710;
+            padding: 15px 0;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border-radius: 45px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: scale(1.02);
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        /* Scrollbar Styling */
+        .form-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .form-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .form-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+        
+        .form-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Registration Link Styling */
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .register-button {
+            background-color: transparent;
+            color: #ffffff;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+            padding: 0;
+            margin: 0;
+            /* Override default button styles */
+            width: auto;
+            margin-top: 0;
+        }
+        
+        /* Fix: Override the hover effect for register button explicitly */
+        .register-button:hover {
+            color: #ffdd57;
+            transform: none;
+            background-color: transparent; /* This prevents the black box */
+        }
+        
+        /* Error Message */
+        .error-message {
+            color: #ff6b6b;
+            background-color: rgba(255, 107, 107, 0.1);
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 800px) {
+            .container {
+                width: 90%;
+                flex-direction: column;
+                height: auto;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+            }
+            
+            .form-container {
+                width: 100%;
+                height: 520px;
+            }
+            
+            .image-container {
+                display: none;
+            }
+            
+            h3 {
+                position: relative;
+                top: 80px;
+                left: 50%;
+                z-index: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <a href="/" class="logo">
+        <img src="/assets/images/pragati.png" alt="Logo" width="350px" height="150">
+    </a>
+    <h3>Coordinator Login</h3>
+    
+    <div class="container">
+        <div class="form-container">
+            <form method="POST" action="/loginCoordinator" id="loginForm">
+                <div class="error-message" id="errorMessage"></div>
+                
+                <label for="username">Username</label>
+                <input type="text" name="username" placeholder="Username" id="username">
+                
+                <label for="password">Password</label>
+                <div class="password-container">
+                    <input type="password" name="password" placeholder="Password" id="password">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword()"></i>
+                </div>
+                
+                <div class="register-link">
+                    Not a registered user?
+                    <button type="button" class="register-button" onclick="redirectToRegister()">Register here</button>
+                </div>
+                
+                <button type="submit" class="button">Log In</button>
+            </form>
+        </div>
+        
+        <div class="image-container">
+            <!-- Image container for graphics -->
+        </div>
+    </div>
+    
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.querySelector('.toggle-password');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        function redirectToRegister() {
+            window.location.href = "/register";  // Redirect to registration page
+        }
+
+        // Improved AJAX login implementation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Clear previous error messages
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            
+            // Validate input
+            if (!username || !password) {
+                errorMessage.textContent = 'Please enter both username and password';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            // Create XMLHttpRequest object for more compatibility
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/loginCoordinator', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        // Check if the response contains HTML (likely the dashboard page)
+                        if (xhr.responseText.includes('<!DOCTYPE html>') || 
+                            xhr.responseText.includes('<html') || 
+                            xhr.responseText.trim().startsWith('<')) {
+                            // Successful login - the server returned a HTML page
+                            window.location.href = '/coordinatorDashboard'; // Adjust to the correct redirect path
+                        } else {
+                            try {
+                                // Try to parse as JSON for error messages
+                                const response = JSON.parse(xhr.responseText);
+                                if (response.error) {
+                                    errorMessage.textContent = response.error;
+                                    errorMessage.style.display = 'block';
+                                }
+                            } catch (e) {
+                                // If not JSON and not HTML, check for error indicators in text
+                                if (xhr.responseText.toLowerCase().includes('error') || 
+                                    xhr.responseText.toLowerCase().includes('not found') || 
+                                    xhr.responseText.toLowerCase().includes('incorrect')) {
+                                    errorMessage.textContent = xhr.responseText || 'Login failed. Please check your credentials.';
+                                    errorMessage.style.display = 'block';
+                                } else {
+                                    // Otherwise, assume success but with unexpected response
+                                    window.location.reload();
+                                }
+                            }
+                        }
+                    } else if (xhr.status === 302 || xhr.status === 301) {
+                        // Handle redirect status codes
+                        const redirectUrl = xhr.getResponseHeader('Location');
+                        if (redirectUrl) {
+                            window.location.href = redirectUrl;
+                        } else {
+                            window.location.href = '/coordinatorDashboard'; // Fallback redirect
+                        }
+                    } else {
+                        // Handle HTTP errors
+                        errorMessage.textContent = 'Username not found or incorrect password';
+                        errorMessage.style.display = 'block';
+                    }
+                }
+            };
+            
+            // Prepare and send data
+            const data = `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+            xhr.send(data);
+        });
+        
+        // Check for error parameter in URL (for server-side redirects with errors)
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorParam = urlParams.get('error');
+            
+            if (errorParam) {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = decodeURIComponent(errorParam);
+                errorMessage.style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>

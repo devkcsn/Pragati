@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Pragati - Registration Page</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="shortcut icon" href="books-stack-of-three.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <style media="screen">
+        /* Base Styles */
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-image: url('/assets/images/background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 0;
+        }
+        
+        .logo {
+            position: absolute;
+            z-index: 1;
+        }
+        
+        /* Container Layout */
+        .container {
+            display: flex;
+            width: 800px;
+            height: 520px;
+            position: absolute;
+            transform: translate(50%, -50%);
+            top: 50%;
+            right: 30%; /* Shifted to right */
+            border-radius: 45px; /* More rounded corners */
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .form-container {
+            background-color: rgba(255, 255, 255, 0.13);
+            padding: 40px 35px;
+            width: 60%;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .image-container {
+            width: 40%;
+            height: 100%;
+            background-image: url('/assets/images/registration-logo.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+        
+        /* Form Styling */
+        form * {
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            outline: none;
+            border: none;
+        }
+        
+        h3 {
+            position: absolute;
+            top: 20px;
+            left: 70%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 600;
+            z-index: 1;
+        }
+        
+        label {
+            display: block;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        /* Name fields row layout */
+        .name-row {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .name-field {
+            flex: 1;
+        }
+        
+        /* Input Fields */
+        input {
+            display: block;
+            height: 50px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 45px; /* More rounded corners like Apple */
+            padding: 0 15px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 300;
+            color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+        
+        /* Role Selection Styling */
+        .role-selection {
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .role-dropdown {
+            position: relative;
+        }
+        
+        /* Hide native select but keep it accessible */
+        select#role {
+            opacity: 0;
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+        }
+        
+        /* Custom select trigger */
+        .custom-select-trigger {
+            height: 50px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 45px;
+            padding: 0 15px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 300;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .custom-select-trigger:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.01);
+        }
+        
+        .custom-select-trigger.role-glow {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transform: scale(1.02);
+        }
+        
+        .custom-select-trigger i {
+            transition: transform 0.3s ease;
+        }
+        
+        .custom-select-trigger.active i {
+            transform: rotate(180deg);
+        }
+        
+        /* Custom dropdown list styling */
+        .custom-options {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background-color: rgba(40, 40, 40, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        
+        .custom-options.show {
+            max-height: 200px;
+            opacity: 1;
+        }
+        
+        .option-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .option-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .option-item.selected {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 500;
+        }
+        
+        /* Selected role display */
+        .selected-role {
+            margin-top: 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Role icons for visualization */
+        .role-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 16px;
+            vertical-align: middle;
+        }
+        
+        input::placeholder {
+            color: #ffffff;
+            opacity: 0.8;
+        }
+        
+        input:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Button */
+        button {
+            margin-top: 30px;
+            width: 100%;
+            background-color: #ffffff;
+            color: #080710;
+            padding: 15px 0;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border-radius: 45px; /* Match input roundness */
+            cursor: pointer;
+        }
+        
+        button:hover {
+            transform: scale(1.02);
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        /* Password Field */
+        .password-container {
+            position: relative;
+        }
+        
+        .password-container input {
+            width: 100%;
+            padding-right: 40px;
+        }
+        
+        .password-container .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #ffffff;
+        }
+        
+        /* Scrollbar Styling */
+        .form-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .form-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .form-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+        
+        .form-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Error Message */
+        #errorMessage {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            z-index: 2;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        /* Field Error Styles */
+        .field-error {
+            border: 2px solid #ff3333 !important;
+            background-color: rgba(255, 51, 51, 0.2) !important;
+        }
+        
+        .field-error-message {
+            color: #ff3333;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        /* Animation for field error message */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .field-error-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* Animations for select dropdown */
+        @keyframes slideDown {
+            from { 
+                max-height: 0;
+                opacity: 0;
+            }
+            to { 
+                max-height: 200px;
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                max-height: 200px;
+                opacity: 1;
+            }
+            to { 
+                max-height: 0;
+                opacity: 0;
+            }
+        }
+        
+        .slideDown {
+            animation: slideDown 0.3s ease forwards;
+        }
+        
+        .slideUp {
+            animation: slideUp 0.3s ease forwards;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 800px) {
+            .container {
+                width: 90%;
+                flex-direction: column;
+                height: auto;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+            }
+            
+            .form-container {
+                width: 100%;
+                height: 520px;
+            }
+            
+            .image-container {
+                display: none;
+            }
+            
+            h3 {
+                position: relative;
+                top: 80px;
+                left: 50%;
+                z-index: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div> <!-- Blurred background overlay -->
+    <a href='/' class="logo">
+        <img src="/assets/images/pragati.png" alt="Logo" width="350px" height="150">
+    </a>
+    <h3>Registration Page</h3>
+    
+    <div class="container">
+        <div class="form-container">
+            <form id="registerForm">
+                <div class="role-selection">
+                    <label for="role">Register as</label>
+                    <div class="role-dropdown">
+                        <!-- Hidden native select for form submission -->
+                        <select id="role" name="role">
+                            <option value="" disabled selected>Select Role</option>
+                            <option value="student">Student</option>
+                            <option value="coordinator">Coordinator</option>
+                        </select>
+                        
+                        <!-- Custom select trigger -->
+                        <div class="custom-select-trigger" id="role-trigger">
+                            <span class="trigger-text">Select Role</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        
+                        <!-- Custom dropdown menu -->
+                        <div id="custom-options" class="custom-options">
+                            <div class="option-item" data-value="">Select Role</div>
+                            <div class="option-item" data-value="student"><i class="fas fa-user-graduate role-icon"></i>Student</div>
+                            <div class="option-item" data-value="coordinator"><i class="fas fa-chalkboard-teacher role-icon"></i>Coordinator</div>
+                        </div>
+                    </div>
+                    <div id="role-display" class="selected-role"></div>
+                </div>
+                
+                <!-- Name fields in a row -->
+                <div class="name-row">
+                    <div class="name-field">
+                        <label for="first_name">First Name</label>
+                        <input type="text" name="first_name" placeholder="First Name" id="first_name">
+                    </div>
+                    
+                    <div class="name-field">
+                        <label for="last_name">Last Name</label>
+                        <input type="text" name="last_name" placeholder="Last Name" id="last_name">
+                    </div>
+                </div>
+                
+                <label for="email">Email ID</label>
+                <input type="email" name="email" placeholder="Email" id="email">
+                
+                <label for="phone">Phone No</label>
+                <input type="tel" name="phone" placeholder="Phone Number" id="phone">
+                
+                <label for="username">Username</label>
+                <input type="text" name="username" placeholder="Username" id="username">
+                
+                <label for="password">Password</label>
+                <div class="password-container">
+                    <input type="password" name="password" placeholder="Password" id="password">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword()"></i>
+                </div>
+                
+                <button type="submit" class="button" id="registerButton">Register</button>
+            </form>
+        </div>
+        
+        <div class="image-container">
+            <!-- Image container -->
+        </div>
+    </div>
+    
+    <div id="errorMessage" style="display:none;"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Role selection enhancement
+            const roleTrigger = document.getElementById('role-trigger');
+            const roleSelect = document.getElementById('role');
+            const customOptions = document.getElementById('custom-options');
+            const roleDisplay = document.getElementById('role-display');
+            const optionItems = document.querySelectorAll('.option-item');
+            
+            // Toggle custom dropdown
+            roleTrigger.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (customOptions.classList.contains('show')) {
+                    customOptions.classList.remove('show');
+                    customOptions.classList.add('slideUp');
+                    roleTrigger.classList.remove('active');
+                    roleTrigger.classList.remove('role-glow');
+                } else {
+                    customOptions.classList.remove('slideUp');
+                    customOptions.classList.add('show', 'slideDown');
+                    roleTrigger.classList.add('active');
+                    roleTrigger.classList.add('role-glow');
+                }
+            });
+            
+            // Handle option selection
+            optionItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    
+                    // Skip if the "Select Role" option is clicked
+                    if (!value) return;
+                    
+                    // Update select value (the hidden native select)
+                    roleSelect.value = value;
+                    
+                    // Update trigger text
+                    const triggerText = roleTrigger.querySelector('.trigger-text');
+                    triggerText.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+                    
+                    // Update display
+                    if (value) {
+                        const iconClass = value === 'student' ? 'fa-user-graduate' : 'fa-chalkboard-teacher';
+                        roleDisplay.innerHTML = `<i class="fas ${iconClass} role-icon"></i>Selected Role: ${value.charAt(0).toUpperCase() + value.slice(1)}`;
+                        roleDisplay.style.opacity = '1';
+                    } else {
+                        roleDisplay.textContent = '';
+                        roleDisplay.style.opacity = '0';
+                    }
+                    
+                    // Update selected item styling
+                    optionItems.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    // Close dropdown
+                    customOptions.classList.remove('show', 'slideDown');
+                    customOptions.classList.add('slideUp');
+                    roleTrigger.classList.remove('active');
+                    roleTrigger.classList.remove('role-glow');
+                    
+                    // Trigger change event on select
+                    const event = new Event('change');
+                    roleSelect.dispatchEvent(event);
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!roleTrigger.contains(e.target) && !customOptions.contains(e.target)) {
+                    customOptions.classList.remove('show', 'slideDown');
+                    customOptions.classList.add('slideUp');
+                    roleTrigger.classList.remove('active');
+                    roleTrigger.classList.remove('role-glow');
+                }
+            });
+        });
+
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const toggleIcon = document.querySelector('.toggle-password');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+        
+        // Clear all field error indicators
+        function clearFieldErrors() {
+            // Remove error classes from all inputs
+            document.querySelectorAll('input, select').forEach(input => {
+                input.classList.remove('field-error');
+            });
+            
+            // Clear all error messages
+            document.querySelectorAll('.field-error-message').forEach(msg => {
+                msg.style.display = 'none';
+                msg.textContent = '';
+                msg.classList.remove('show');
+            });
+            
+            // Clear global error message
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.style.display = 'none';
+            errorMsg.textContent = '';
+        }
+        
+        // Mark a specific field as having an error
+        function markFieldError(fieldName, errorMsg) {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            const errorElement = document.getElementById(`${fieldName}-error`);
+            
+            if (field) {
+                field.classList.add('field-error');
+                field.focus();
+                field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            if (errorElement) {
+                errorElement.textContent = errorMsg;
+                errorElement.style.display = 'block';
+                errorElement.classList.add('show');
+            }
+        }
+        
+        // Show global error message
+        function showGlobalError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            
+            // Hide error message after 5 seconds
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Add input event listeners to clear errors when the field is modified
+        document.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('field-error');
+                const errorElement = document.getElementById(`${this.name}-error`);
+                if (errorElement) {
+                    errorElement.textContent = '';
+                    errorElement.style.display = 'none';
+                    errorElement.classList.remove('show');
+                }
+                
+                // Re-enable the register button if it was disabled
+                document.getElementById('registerButton').disabled = false;
+                document.getElementById('registerButton').textContent = 'Register';
+            });
+        });
+        
+        // Form submission handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const registerForm = document.getElementById('registerForm');
+            
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(event) {
+                    event.preventDefault(); // Prevent the default form submission
+                    
+                    // Clear previous errors
+                    clearFieldErrors();
+                    
+                    // Validate form before submission
+                    if (!this.checkValidity()) {
+                        this.reportValidity();
+                        return;
+                    }
+                    
+                    const formData = new FormData(this);
+                    const formDataObj = {};
+                    
+                    // Convert FormData to plain object
+                    formData.forEach((value, key) => {
+                        formDataObj[key] = value;
+                    });
+                    
+                    console.log("Submitting form data:", formDataObj);
+                    
+                    try {
+                        // Show loading state
+                        const submitButton = document.getElementById('registerButton');
+                        const originalButtonText = submitButton.textContent;
+                        submitButton.textContent = 'Registering...';
+                        submitButton.disabled = true;
+                        
+                        const response = await fetch('/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(formDataObj)
+                        });
+                        
+                        // Get the response as json
+                        const result = await response.json();
+                        console.log("Response:", result);
+                        
+                        // Process response
+                        if (response.ok && result.success) {
+                            console.log('Registration successful:', result);
+                            
+                            // Use the redirect URL from the server response
+                            if (result.redirectUrl) {
+                                console.log("Redirecting to:", result.redirectUrl);
+                                window.location.href = result.redirectUrl;
+                            } else {
+                                // Fallback if redirectUrl is not provided
+                                const redirectUrl = formDataObj.role === 'student' ? '/loginStudent' : '/loginCoordinator';
+                                console.log("Fallback redirect to:", redirectUrl);
+                                window.location.href = redirectUrl;
+                            }
+                        } else {
+                            // Handle error response
+                            const errorMessage = result.message || 'Registration failed.';
+                            console.error("Registration error:", errorMessage);
+                            
+                            // Re-enable the button no matter what
+                            submitButton.disabled = false;
+                            submitButton.textContent = originalButtonText;
+                            
+                            // Check if this is a duplicate field error
+                            if (result.duplicateField) {
+                                markFieldError(result.duplicateField, `This ${result.duplicateField} is already in use. Please try a different one.`);
+                                showGlobalError(`The ${result.duplicateField} you entered is already in use.`);
+                            } else if (errorMessage.includes('already in use')) {
+                                // Try to extract which field is in use
+                                const fieldMatch = errorMessage.match(/The (email|phone|username)/i);
+                                if (fieldMatch && fieldMatch[1]) {
+                                    const fieldName = fieldMatch[1].toLowerCase();
+                                    markFieldError(fieldName, `This ${fieldName} is already in use. Please try a different one.`);
+                                }
+                                showGlobalError(errorMessage);
+                            } else if (result.missingFields && result.missingFields.length > 0) {
+                                // Handle missing fields
+                                result.missingFields.forEach(field => {
+                                    markFieldError(field, "This field is required");
+                                });
+                                showGlobalError("Please fill in all required fields.");
+                            } else {
+                                showGlobalError(errorMessage);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Network or parsing error:', error);
+                        showGlobalError('Network error. Please check your connection and try again.');
+                        
+                        // Make sure button is re-enabled in case of error
+                        const submitButton = document.getElementById('registerButton');
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Register';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
