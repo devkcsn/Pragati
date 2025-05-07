@@ -26,7 +26,6 @@ const isAuthenticated = (req, res, next) => {
     }
     res.redirect('/');
 };
-//-------
 
 // Session configuration
 app.use(session({
@@ -50,8 +49,7 @@ const pool = mysql.createPool({
     port: process.env.DB_PORT || 3306,
 });
 
-// Registration route
-// This route handles the registration of both students and coordinators
+// Registration route -- This route handles the registration of both students and coordinators
 app.post('/register', async (req, res) => {
     try {
         console.log("Form submission:", req.body);
@@ -283,7 +281,134 @@ app.post("/loginCoordinator", async (req, res) => {
     }
 });
 
-// API endpoint to get available quizzes for students
+// Face detection //
+
+// Face detection logic start // 
+const faceMonitorService = require('./face_monitor_service');
+
+// Start face monitoring for a quiz session
+app.post('/api/quiz/:id/start-monitoring', isAuthenticated, async (req, res) => {
+    if (req.session.user.role !== 'student') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    const quizId = req.params.id;
+    const sessionId = `${req.session.user.id}_${quizId}`;
+    
+    try {
+        // Start the face monitoring process
+        const monitoringInfo = await faceMonitorService.startMonitoringSession(sessionId);
+        
+        // Record monitoring session in database (optional)
+        await recordMonitoringSession(quizId, req.session.user.id, monitoringInfo.websocketPort);
+        
+        return res.status(200).json({
+            success: true,
+            websocketPort: monitoringInfo.websocketPort
+        });
+    } catch (err) {
+        console.error('Error starting face monitoring:', err);
+        return res.status(500).json({ message: 'Failed to start monitoring: ' + err.message });
+    }
+});
+
+// Stop face monitoring for a quiz session
+app.post('/api/quiz/:id/stop-monitoring', isAuthenticated, async (req, res) => {
+    if (req.session.user.role !== 'student') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    const quizId = req.params.id;
+    const sessionId = `${req.session.user.id}_${quizId}`;
+    
+    try {
+        const result = await faceMonitorService.stopMonitoringSession(sessionId);
+        
+        return res.status(200).json({
+            success: true,
+            message: result.message
+        });
+    } catch (err) {
+        console.error('Error stopping face monitoring:', err);
+        return res.status(500).json({ message: 'Failed to stop monitoring: ' + err.message });
+    }
+});
+
+// Add security issue endpoint to record face monitoring violations
+app.post('/api/quiz/face-monitoring-issue', isAuthenticated, async (req, res) => {
+    if (req.session.user.role !== 'student') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    const { quizId, issueType, awayDuration, timestamp } = req.body;
+    
+    try {
+        const connection = await pool.getConnection();
+        try {
+            // Use the timestamp provided or current time
+            const now = timestamp ? new Date(timestamp) : new Date();
+            const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+            
+            await connection.execute(
+                'INSERT INTO quiz_security_logs (quiz_id, student_username, issue_type, details, timestamp) VALUES (?, ?, ?, ?, ?)',
+                [quizId, req.session.user.id, issueType, `Looking away for ${awayDuration} seconds`, formattedDate]
+            );
+            
+            return res.status(200).json({ success: true });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Error recording face monitoring issue:', err);
+        return res.status(500).json({ message: 'Failed to record issue: ' + err.message });
+    }
+});
+
+// Helper function to record monitoring session in database
+async function recordMonitoringSession(quizId, studentId, port) {
+    try {
+        // Check if the table exists
+        const connection = await pool.getConnection();
+        try {
+            const [tables] = await connection.query(`
+                SELECT TABLE_NAME 
+                FROM information_schema.TABLES 
+                WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'monitoring_sessions'
+            `, [process.env.DB_NAME]);
+            
+            // Create the table if it doesn't exist
+            if (tables.length === 0) {
+                await connection.query(`
+                    CREATE TABLE monitoring_sessions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        quiz_id INT NOT NULL,
+                        student_username VARCHAR(100) NOT NULL,
+                        websocket_port INT NOT NULL,
+                        started_at DATETIME NOT NULL,
+                        ended_at DATETIME NULL,
+                        INDEX (quiz_id),
+                        INDEX (student_username)
+                    )
+                `);
+            }
+            
+            // Insert the monitoring session record
+            await connection.execute(
+                'INSERT INTO monitoring_sessions (quiz_id, student_username, websocket_port, started_at) VALUES (?, ?, ?, NOW())',
+                [quizId, studentId, port]
+            );
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Error recording monitoring session:', err);
+        // Continue even if recording fails
+    }
+}
+
+// End of face detection logic //
+
+// API endpoint to get available quizzes for students -- provides a list/overview of quizzes available to students
 app.get('/api/availableQuizzes', isAuthenticated, async (req, res) => {
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -387,7 +512,7 @@ app.get('/api/student/stats', isAuthenticated, async (req, res) => {
     }
 });
 
-// API endpoint to get quiz data for students
+// API endpoint to get quiz data for students -- provides the detailed content of a specific quiz when a student wants to take it
 app.get('/api/quiz/:id', isAuthenticated, async (req, res) => {
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -492,117 +617,6 @@ app.get('/api/quiz/:id', isAuthenticated, async (req, res) => {
         }
     });
 
-// API endpoint to create a quiz for coordinators
-app.post('/api/quizzes', isAuthenticated, async (req, res) => {
-    try {
-        // Check if user is a coordinator
-        if (req.session.user.role !== 'coordinator') {
-            return res.status(403).json({ message: 'Only coordinators can create quizzes' });
-        }
-
-        const { title, description, questions, scheduledDate, deadlineDate, duration } = req.body;
-
-        // Validate required fields
-        if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
-            return res.status(400).json({ message: 'Title and at least one question are required' });
-        }
-
-        // Validate scheduled date if provided
-        let parsedScheduledDate = null;
-        if (scheduledDate) {
-            parsedScheduledDate = new Date(scheduledDate);
-            if (isNaN(parsedScheduledDate.getTime())) {
-                return res.status(400).json({ message: 'Invalid scheduled date format' });
-            }
-        }
-        
-        // Validate deadline date if provided
-        let parsedDeadlineDate = null;
-        if (deadlineDate) {
-            parsedDeadlineDate = new Date(deadlineDate);
-            if (isNaN(parsedDeadlineDate.getTime())) {
-                return res.status(400).json({ message: 'Invalid deadline date format' });
-            }
-        }
-        
-        // Validate that deadline is after scheduled date if both are provided
-        if (parsedScheduledDate && parsedDeadlineDate && parsedDeadlineDate <= parsedScheduledDate) {
-            return res.status(400).json({ message: 'Deadline must be after the scheduled date' });
-        }
-
-        const connection = await pool.getConnection();
-        
-        try {
-            // Begin transaction
-            await connection.beginTransaction();
-            
-            // Insert quiz record with scheduled date, deadline date, and duration
-            const [quizResult] = await connection.execute(
-                'INSERT INTO quizzes (title, description, created_by, scheduled_date, deadline_date, duration, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [
-                    title, 
-                    description || '', 
-                    req.session.user.id, 
-                    parsedScheduledDate, 
-                    parsedDeadlineDate,
-                    duration || 30, // Default to 30 minutes if not specified
-                    parsedScheduledDate ? false : true
-                ]
-            );
-            
-            const quizId = quizResult.insertId;
-            
-            // Insert questions
-            for (const question of questions) {
-                if (!question.text || !question.options || !Array.isArray(question.options)) {
-                    throw new Error('Invalid question format');
-                }
-                
-                const [questionResult] = await connection.execute(
-                    'INSERT INTO questions (quiz_id, question_text) VALUES (?, ?)',
-                    [quizId, question.text]
-                );
-                
-                const questionId = questionResult.insertId;
-                
-                // Insert options
-                for (const option of question.options) {
-                    if (!option.text) continue;
-                    
-                    await connection.execute(
-                        'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
-                        [questionId, option.text, option.isCorrect ? 1 : 0]
-                    );
-                }
-            }
-            
-            // Commit transaction
-            await connection.commit();
-            
-            return res.status(201).json({ 
-                success: true,
-                message: 'Quiz created successfully',
-                quizId: quizId
-            });
-            
-        } catch (err) {
-            // Rollback on error
-            await connection.rollback();
-            console.error('Database error:', err);
-            return res.status(500).json({ 
-                message: 'Error creating quiz: ' + err.message 
-            });
-        } finally {
-            connection.release();
-        }
-    } catch (err) {
-        console.error('Server error:', err);
-        return res.status(500).json({ 
-            message: 'An unexpected error occurred: ' + err.message 
-        });
-    }
-});
-
 // API endpoint to get quiz duration for students during takeQuiz
 app.get('/api/quizzes/:quizId/duration', isAuthenticated, async (req, res) => {
     try {
@@ -636,34 +650,7 @@ app.get('/api/quizzes/:quizId/duration', isAuthenticated, async (req, res) => {
     }
 });
 
-// Map to store active connections for each quiz
-const activeConnections = new Map();
-
-// -- END OF FACE DETECTION -- //
-
-// Log security issues during quiz
-app.post('/api/quiz/security-issue', async (req, res) => {
-    const { quizId, issueType, timestamp } = req.body;
-    
-    try {
-        // Convert ISO string to MySQL datetime format
-        const dateObj = new Date(timestamp);
-        const mysqlTimestamp = dateObj.toISOString().slice(0, 19).replace('T', ' ');
-        
-        // Use pool instead of connection
-        await pool.execute(
-            'INSERT INTO quiz_security_logs (quiz_id, student_username, issue_type, timestamp) VALUES (?, ?, ?, ?)',
-            [quizId, req.session.username, issueType, mysqlTimestamp]
-        );
-        
-        res.status(200).json({ success: true });
-    } catch (error) {
-        console.error("Error logging security issue:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-//Quiz submission endpoint handles unanswered questions
+//Quiz submission endpoint handles unanswered questions for students
 app.post('/api/quiz/:id/submit', isAuthenticated, async (req, res) => {
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -795,6 +782,147 @@ app.post('/api/quiz/:id/submit', isAuthenticated, async (req, res) => {
     }
 });
 
+// API endpoint to create a quiz for coordinators
+app.post('/api/quizzes', isAuthenticated, async (req, res) => {
+    try {
+        // Check if user is a coordinator
+        if (req.session.user.role !== 'coordinator') {
+            return res.status(403).json({ message: 'Only coordinators can create quizzes' });
+        }
+
+        const { title, description, questions, scheduledDate, deadlineDate, duration } = req.body;
+
+        // Validate required fields
+        if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ message: 'Title and at least one question are required' });
+        }
+
+        // Validate scheduled date if provided
+        let parsedScheduledDate = null;
+        if (scheduledDate) {
+            parsedScheduledDate = new Date(scheduledDate);
+            if (isNaN(parsedScheduledDate.getTime())) {
+                return res.status(400).json({ message: 'Invalid scheduled date format' });
+            }
+        }
+        
+        // Validate deadline date if provided
+        let parsedDeadlineDate = null;
+        if (deadlineDate) {
+            parsedDeadlineDate = new Date(deadlineDate);
+            if (isNaN(parsedDeadlineDate.getTime())) {
+                return res.status(400).json({ message: 'Invalid deadline date format' });
+            }
+        }
+        
+        // Validate that deadline is after scheduled date if both are provided
+        if (parsedScheduledDate && parsedDeadlineDate && parsedDeadlineDate <= parsedScheduledDate) {
+            return res.status(400).json({ message: 'Deadline must be after the scheduled date' });
+        }
+
+        const connection = await pool.getConnection();
+        
+        try {
+            // Begin transaction
+            await connection.beginTransaction();
+            
+            // Insert quiz record with scheduled date, deadline date, and duration
+            const [quizResult] = await connection.execute(
+                'INSERT INTO quizzes (title, description, created_by, scheduled_date, deadline_date, duration, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [
+                    title, 
+                    description || '', 
+                    req.session.user.id, 
+                    parsedScheduledDate, 
+                    parsedDeadlineDate,
+                    duration || 30, // Default to 30 minutes if not specified
+                    parsedScheduledDate ? false : true
+                ]
+            );
+            
+            const quizId = quizResult.insertId;
+            
+            // Insert questions
+            for (const question of questions) {
+                if (!question.text || !question.options || !Array.isArray(question.options)) {
+                    throw new Error('Invalid question format');
+                }
+                
+                const [questionResult] = await connection.execute(
+                    'INSERT INTO questions (quiz_id, question_text) VALUES (?, ?)',
+                    [quizId, question.text]
+                );
+                
+                const questionId = questionResult.insertId;
+                
+                // Insert options
+                for (const option of question.options) {
+                    if (!option.text) continue;
+                    
+                    await connection.execute(
+                        'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
+                        [questionId, option.text, option.isCorrect ? 1 : 0]
+                    );
+                }
+            }
+            
+            // Commit transaction
+            await connection.commit();
+            
+            return res.status(201).json({ 
+                success: true,
+                message: 'Quiz created successfully',
+                quizId: quizId
+            });
+            
+        } catch (err) {
+            // Rollback on error
+            await connection.rollback();
+            console.error('Database error:', err);
+            return res.status(500).json({ 
+                message: 'Error creating quiz: ' + err.message 
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Server error:', err);
+        return res.status(500).json({ 
+            message: 'An unexpected error occurred: ' + err.message 
+        });
+    }
+});
+
+// Log security issues during quiz
+app.post('/api/quiz/security-issue', async (req, res) => {
+    const { quizId, issueType, timestamp } = req.body;
+    
+    try {
+        // Validate that required parameters are present
+        if (!quizId || !issueType || !timestamp) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Missing required parameters: quizId, issueType, and timestamp are all required' 
+            });
+        }
+        
+        // Convert ISO string to MySQL datetime format
+        const dateObj = new Date(timestamp);
+        const mysqlTimestamp = dateObj.toISOString().slice(0, 19).replace('T', ' ');
+        
+        // Use pool instead of connection and ensure all parameters are defined
+        await pool.execute(
+            'INSERT INTO quiz_security_logs (quiz_id, student_username, issue_type, timestamp) VALUES (?, ?, ?, ?)',
+            [quizId, req.session.user.id, issueType, mysqlTimestamp]
+        );
+        
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Error logging security issue:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Protected routes
 // Home route
 app.get('/', (req, res) => {
@@ -898,6 +1026,7 @@ app.get('/takeQuiz', (req, res) => {
       csrfToken: req.csrfToken() // Add this line to pass the token
     });
   });
+
 // Route to create a quiz (only accessible by coordinators)
 app.get('/createQuiz', isAuthenticated, (req, res) => {
     if (req.session.user.role !== 'coordinator') {
@@ -934,6 +1063,7 @@ cron.schedule('* * * * *', async () => {
         console.error('Failed to get database connection for quiz activation:', err);
     }
 });
+
 // Logout route
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -943,6 +1073,7 @@ app.get('/logout', (req, res) => {
         res.redirect('/');
     });
 });
+
 // Route to show available quizzes to students
 app.get('/availableQuizzes', isAuthenticated, async (req, res) => {
     if (req.session.user.role !== 'student') {
@@ -983,6 +1114,78 @@ app.get('/availableQuizzes', isAuthenticated, async (req, res) => {
         console.error('Error fetching available quizzes:', err);
         res.status(500).render('error', { 
             message: 'Failed to load available quizzes' 
+        });
+    }
+});
+
+// Route to take a specific quiz
+app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
+    if (req.session.user.role !== 'student') {
+        return res.redirect('/');
+    }
+    
+    const quizId = req.params.id;
+    
+    try {
+        const connection = await pool.getConnection();
+        try {
+            // Check if quiz exists and is active
+            const [quizzes] = await connection.execute(
+                'SELECT * FROM quizzes WHERE id = ? AND is_active = TRUE',
+                [quizId]
+            );
+            
+            if (quizzes.length === 0) {
+                return res.status(404).render('error', { 
+                    message: 'Quiz not found or not available' 
+                });
+            }
+            
+            const quiz = quizzes[0];
+            
+            // Check if student has already taken this quiz
+            const [attempts] = await connection.execute(
+                'SELECT * FROM quiz_attempts WHERE quiz_id = ? AND student_username = ?',
+                [quizId, req.session.user.id]
+            );
+            
+            if (attempts.length > 0) {
+                return res.render('quizCompleted', {
+                    user: req.session.user,
+                    quiz: quiz,
+                    attempt: attempts[0]
+                });
+            }
+            
+            // Get all questions for this quiz
+            const [questions] = await connection.execute(
+                'SELECT * FROM questions WHERE quiz_id = ?',
+                [quizId]
+            );
+            
+            // Get all options for these questions
+            for (let question of questions) {
+                const [options] = await connection.execute(
+                    'SELECT id, option_text FROM options WHERE question_id = ?',
+                    [question.id]
+                );
+                question.options = options;
+            }
+            
+            // Render the quiz page
+            res.render('takeQuiz', {
+                user: req.session.user,
+                quiz: quiz,
+                questions: questions,
+                duration: quiz.duration || 30 // Default to 30 minutes if not specified
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Error loading quiz:', err);
+        res.status(500).render('error', { 
+            message: 'Failed to load quiz' 
         });
     }
 });
@@ -1071,79 +1274,6 @@ app.get('/api/quizzes/:id', isAuthenticated, async (req, res) => {
     }
 });
 
-// Route to take a specific quiz
-app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
-    if (req.session.user.role !== 'student') {
-        return res.redirect('/');
-    }
-    
-    const quizId = req.params.id;
-    
-    try {
-        const connection = await pool.getConnection();
-        try {
-            // Check if quiz exists and is active
-            const [quizzes] = await connection.execute(
-                'SELECT * FROM quizzes WHERE id = ? AND is_active = TRUE',
-                [quizId]
-            );
-            
-            if (quizzes.length === 0) {
-                return res.status(404).render('error', { 
-                    message: 'Quiz not found or not available' 
-                });
-            }
-            
-            const quiz = quizzes[0];
-            
-            // Check if student has already taken this quiz
-            const [attempts] = await connection.execute(
-                'SELECT * FROM quiz_attempts WHERE quiz_id = ? AND student_username = ?',
-                [quizId, req.session.user.id]
-            );
-            
-            if (attempts.length > 0) {
-                return res.render('quizCompleted', {
-                    user: req.session.user,
-                    quiz: quiz,
-                    attempt: attempts[0]
-                });
-            }
-            
-            // Get all questions for this quiz
-            const [questions] = await connection.execute(
-                'SELECT * FROM questions WHERE quiz_id = ?',
-                [quizId]
-            );
-            
-            // Get all options for these questions
-            for (let question of questions) {
-                const [options] = await connection.execute(
-                    'SELECT id, option_text FROM options WHERE question_id = ?',
-                    [question.id]
-                );
-                question.options = options;
-            }
-            
-            // Render the quiz page
-            res.render('takeQuiz', {
-                user: req.session.user,
-                quiz: quiz,
-                questions: questions,
-                duration: quiz.duration || 30 // Default to 30 minutes if not specified
-            });
-        } finally {
-            connection.release();
-        }
-    } catch (err) {
-        console.error('Error loading quiz:', err);
-        res.status(500).render('error', { 
-            message: 'Failed to load quiz' 
-        });
-    }
-});
-
-// API endpoint to get quizzes for students
 // This endpoint will return quizzes that are active and have not been attempted by the student
 app.get('/student/quizzes', isAuthenticated, async (req, res) => {
     if (req.session.user.role !== 'student') {
@@ -1175,6 +1305,509 @@ app.get('/student/quizzes', isAuthenticated, async (req, res) => {
         res.status(500).json({ message: 'Failed to load quizzes' });
     }
 });
+
+// API endpoint to get all quizzes for a coordinator for viewing/editing
+app.get('/api/quizzes', isAuthenticated, async (req, res) => {
+    // Check if user is a coordinator
+    if (req.session.user.role !== 'coordinator') {
+        return res.status(403).json({ message: 'Unauthorized access' });
+    }
+    
+    try {
+        const connection = await pool.getConnection();
+        try {
+            // Get all quizzes created by this coordinator
+            const [quizzes] = await connection.execute(
+                `SELECT q.id, q.title, q.description, q.scheduled_date, q.deadline_date, 
+                q.duration, q.is_active, q.created_date, 
+                (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
+                FROM quizzes q
+                WHERE q.created_by = ?
+                ORDER BY q.created_date DESC`,
+                [req.session.user.id]
+            );
+            
+            res.json(quizzes);
+            
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Error fetching quizzes:', err);
+        res.status(500).json({ message: 'Failed to load quizzes' });
+    }
+});
+
+// API endpoint to delete a quiz for coordinators
+app.delete('/api/quizzes/:id', isAuthenticated, async (req, res) => {
+    // Check if user is a coordinator
+    if (req.session.user.role !== 'coordinator') {
+        return res.status(403).json({ message: 'Unauthorized access' });
+    }
+    
+    const quizId = req.params.id;
+    
+    try {
+        const connection = await pool.getConnection();
+        try {
+            // First check if the quiz belongs to this coordinator
+            const [quizCheck] = await connection.execute(
+                'SELECT id FROM quizzes WHERE id = ? AND created_by = ?',
+                [quizId, req.session.user.id]
+            );
+            
+            if (quizCheck.length === 0) {
+                return res.status(404).json({ message: 'Quiz not found or you do not have permission to delete it' });
+            }
+            
+            // Begin transaction
+            await connection.beginTransaction();
+            
+            // Delete options for all questions in this quiz
+            await connection.execute(
+                `DELETE o FROM options o 
+                 JOIN questions q ON o.question_id = q.id 
+                 WHERE q.quiz_id = ?`,
+                [quizId]
+            );
+            
+            // Delete all questions for this quiz
+            await connection.execute(
+                'DELETE FROM questions WHERE quiz_id = ?',
+                [quizId]
+            );
+            
+            // Delete all attempts for this quiz
+            await connection.execute(
+                'DELETE FROM quiz_attempts WHERE quiz_id = ?',
+                [quizId]
+            );
+            
+            // Finally delete the quiz itself
+            await connection.execute(
+                'DELETE FROM quizzes WHERE id = ?',
+                [quizId]
+            );
+            
+            // Commit transaction
+            await connection.commit();
+            
+            res.json({ message: 'Quiz deleted successfully' });
+            
+        } catch (err) {
+            // Rollback in case of error
+            await connection.rollback();
+            throw err;
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Error deleting quiz:', err);
+        res.status(500).json({ message: 'Failed to delete quiz' });
+    }
+});
+
+
+// Admin Route //
+
+// ======= ADMIN FUNCTIONALITY =======
+
+// Secret entry point for admin access
+
+function isAdminAuthenticated(req, res, next) {
+    if (!req.session.admin) {
+        return res.status(401).json({ message: 'Unauthorized access' });
+    }
+    next();
+}
+
+app.post('/api/create-admin/:token', async (req, res) => {
+    // First validate that the token matches your admin token
+    const { token } = req.params;
+    
+    if (token !== process.env.ADMIN_TOKEN) {
+        return res.status(403).json({ success: false, message: 'Invalid admin token' });
+    }
+    
+    try {
+        const { username, password, accessLevel = 'standard', secretKey } = req.body;
+        
+        // Additional security - require a secret key from .env
+        if (secretKey !== process.env.ADMIN_CREATION_KEY) {
+            return res.status(403).json({ success: false, message: 'Invalid secret key' });
+        }
+        
+        // Rest of your code remains the same...
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Username and password required' });
+        }
+        
+        const connection = await pool.getConnection();
+        
+        try {
+            // Check if admin table exists, create if not
+            await connection.execute(`
+                CREATE TABLE IF NOT EXISTS admins (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    access_level VARCHAR(20) DEFAULT 'standard',
+                    last_login DATETIME,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Check if admin logs table exists, create if not
+            await connection.execute(`
+                CREATE TABLE IF NOT EXISTS admin_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    admin_username VARCHAR(255) NOT NULL,
+                    action VARCHAR(50) NOT NULL,
+                    table_name VARCHAR(50) NOT NULL,
+                    record_id VARCHAR(255) NOT NULL,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (admin_username),
+                    INDEX (action)
+                )
+            `);
+            
+            // Hash the password
+            const hashedPassword = await bcrypt.hash(password, 10);
+            
+            // Insert the admin user
+            await connection.execute(
+                'INSERT INTO admins (username, password, access_level) VALUES (?, ?, ?)',
+                [username, hashedPassword, accessLevel]
+            );
+            
+            return res.json({ 
+                success: true, 
+                message: 'Admin user created successfully',
+                adminUrl: `/admin-access/${process.env.ADMIN_TOKEN}`
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Admin creation error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: `Failed to create admin: ${error.message}`
+        });
+    }
+});
+
+// Admin access route (for login page)
+app.get(`/admin-access/${process.env.ADMIN_TOKEN}`, (req, res) => {
+    res.render('admin-login', { token: process.env.ADMIN_TOKEN });
+});
+
+
+// Admin login handler
+app.post(`/admin-login/${process.env.ADMIN_TOKEN}`, async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        if (!username || !password) {
+            return res.status(400).render('admin-dashboard', { 
+                token: process.env.ADMIN_TOKEN,
+                error: 'Username and password are required'
+            });
+        }
+        
+        const connection = await pool.getConnection();
+        
+        try {
+            const [admins] = await connection.execute(
+                'SELECT * FROM admins WHERE username = ?',
+                [username]
+            );
+            
+            if (admins.length === 0 || !(await bcrypt.compare(password, admins[0].password))) {
+                return res.status(401).render('admin-dashboard', { 
+                    token: process.env.ADMIN_TOKEN,
+                    error: 'Invalid credentials'
+                });
+            }
+            
+            // Update last login time
+            await connection.execute(
+                'UPDATE admins SET last_login = NOW() WHERE username = ?',
+                [username]
+            );
+            
+            // Set admin in session
+            req.session.admin = {
+                username: admins[0].username,
+                access_level: admins[0].access_level
+            };
+            
+            return res.redirect(`/admin-dashboard/${process.env.ADMIN_TOKEN}`);
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Admin login error:', error);
+        return res.status(500).render('admin-dashboard', { 
+            token: process.env.ADMIN_TOKEN,
+            error: 'An error occurred. Please try again.'
+        });
+    }
+});
+
+// Admin dashboard
+
+app.get(`/admin-dashboard/${process.env.ADMIN_TOKEN}`, async (req, res) => {
+    // Check if admin is logged in
+    if (!req.session.admin) {
+        return res.redirect(`/admin-access/${process.env.ADMIN_TOKEN}`);
+    }
+
+    try {
+        const connection = await pool.getConnection();
+        
+        try {
+            // Get system statistics
+            const [studentCount] = await connection.execute('SELECT COUNT(*) as count FROM students');
+            const [coordinatorCount] = await connection.execute('SELECT COUNT(*) as count FROM coordinators');
+            const [quizCount] = await connection.execute('SELECT COUNT(*) as count FROM quizzes');
+            const [attemptCount] = await connection.execute('SELECT COUNT(*) as count FROM quiz_attempts');
+            const [securityLogs] = await connection.execute('SELECT COUNT(*) as count FROM quiz_security_logs');
+            
+            // Get latest data
+            const [recentUsers] = await connection.execute(`
+                (SELECT 'student' AS role, username, first_name, last_name, email 
+                FROM students ORDER BY username DESC LIMIT 5)
+                UNION ALL
+                (SELECT 'coordinator' AS role, username, first_name, last_name, email 
+                FROM coordinators ORDER BY username DESC LIMIT 5)
+                LIMIT 10
+            `);
+            
+            const [recentQuizzes] = await connection.execute(`
+                SELECT id, title, created_by, created_date, is_active 
+                FROM quizzes 
+                ORDER BY created_date DESC 
+                LIMIT 10
+            `);
+            
+            // Return admin dashboard with all the data
+            return res.render('admin-dashboard', {
+                admin: req.session.admin,
+                token: process.env.ADMIN_TOKEN,
+                stats: {
+                    students: studentCount[0].count,
+                    coordinators: coordinatorCount[0].count,
+                    quizzes: quizCount[0].count,
+                    attempts: attemptCount[0].count,
+                    securityLogs: securityLogs[0].count
+                },
+                recentUsers,
+                recentQuizzes
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Admin dashboard error:', error);
+        return res.status(500).render('error', { 
+            message: 'Failed to load admin dashboard'
+        });
+    }
+});
+  
+  // API endpoint to get paginated data for each table
+  app.get('/api/admin/data/:table', isAdminAuthenticated, async (req, res) => {
+      try {
+          const { table } = req.params;
+          const { page = 1, limit = 10 } = req.query;
+          const offset = (page - 1) * limit;
+          
+          // Validate table name to prevent SQL injection
+          const allowedTables = [
+              'students', 'coordinators', 'quizzes', 'questions', 
+              'options', 'quiz_attempts', 'quiz_answers', 'quiz_security_logs'
+          ];
+          
+          if (!allowedTables.includes(table)) {
+              return res.status(400).json({ message: 'Invalid table name' });
+          }
+          
+          const connection = await pool.getConnection();
+          
+          try {
+              // Get total count
+              const [countResult] = await connection.execute(`SELECT COUNT(*) as total FROM ${table}`);
+              const total = countResult[0].total;
+              
+              // Get paginated data
+              const [data] = await connection.execute(
+                  `SELECT * FROM ${table} LIMIT ? OFFSET ?`, 
+                  [parseInt(limit), parseInt(offset)]
+              );
+              
+              return res.json({
+                  data,
+                  pagination: {
+                      total,
+                      page: parseInt(page),
+                      limit: parseInt(limit),
+                      pages: Math.ceil(total / limit)
+                  }
+              });
+          } finally {
+              connection.release();
+          }
+      } catch (error) {
+          console.error('Admin data fetch error:', error);
+          return res.status(500).json({ message: 'Failed to fetch data' });
+      }
+  });
+
+// API endpoint to delete a record
+app.delete('/api/admin/delete/:table/:idField/:id',isAdminAuthenticated, async (req, res) => {
+    try {
+        const { table, idField, id } = req.params;
+        
+        // Validate table name and ID field for security
+        const allowedTables = {
+            'students': 'username',
+            'coordinators': 'username',
+            'quizzes': 'id',
+            'questions': 'id',
+            'options': 'id',
+            'quiz_attempts': 'id',
+            'quiz_answers': 'id',
+            'quiz_security_logs': 'id'
+        };
+        
+        if (!allowedTables[table] || allowedTables[table] !== idField) {
+            return res.status(400).json({ success: false, message: 'Invalid table or ID field' });
+        }
+        
+        const connection = await pool.getConnection();
+        
+        try {
+            // Start transaction for safety
+            await connection.beginTransaction();
+            
+            // Log this deletion operation
+            await connection.execute(
+                'INSERT INTO admin_logs (admin_username, action, table_name, record_id) VALUES (?, ?, ?, ?)',
+                [req.session.admin.username, 'DELETE', table, id]
+            );
+            
+            // Execute the delete
+            const [result] = await connection.execute(
+                `DELETE FROM ${table} WHERE ${idField} = ?`,
+                [id]
+            );
+            
+            await connection.commit();
+            
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ success: false, message: 'Record not found' });
+            }
+            
+            return res.json({ 
+                success: true, 
+                message: `Record deleted successfully from ${table}` 
+            });
+        } catch (error) {
+            await connection.rollback();
+            console.error('Delete operation error:', error);
+            return res.status(500).json({ 
+                success: false, 
+                message: `Failed to delete: ${error.message}`
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Admin delete error:', error);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Admin logout endpoint
+app.get(`/admin-logout/${process.env.ADMIN_TOKEN}`, (req, res) => {
+    // Only destroy the admin part of the session
+    delete req.session.admin;
+    res.redirect(`/admin-access/${process.env.ADMIN_TOKEN}`);
+});
+
+// Create an admin user via API (should be disabled in production after initial setup)
+app.post(`/api/create-admin/${process.env.ADMIN_TOKEN}`, async (req, res) => {
+    try {
+        const { username, password, accessLevel = 'standard', secretKey } = req.body;
+        
+        // Additional security - require a secret key from .env
+        if (secretKey !== process.env.ADMIN_CREATION_KEY) {
+            return res.status(403).json({ success: false, message: 'Invalid secret key' });
+        }
+        
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Username and password required' });
+        }
+        
+        const connection = await pool.getConnection();
+        
+        try {
+            // Check if admin table exists, create if not
+            await connection.execute(`
+                CREATE TABLE IF NOT EXISTS admins (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    access_level VARCHAR(20) DEFAULT 'standard',
+                    last_login DATETIME,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Check if admin logs table exists, create if not
+            await connection.execute(`
+                CREATE TABLE IF NOT EXISTS admin_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    admin_username VARCHAR(255) NOT NULL,
+                    action VARCHAR(50) NOT NULL,
+                    table_name VARCHAR(50) NOT NULL,
+                    record_id VARCHAR(255) NOT NULL,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (admin_username),
+                    INDEX (action)
+                )
+            `);
+            
+            // Hash the password
+            const hashedPassword = await bcrypt.hash(password, 10);
+            
+            // Insert the admin user
+            await connection.execute(
+                'INSERT INTO admins (username, password, access_level) VALUES (?, ?, ?)',
+                [username, hashedPassword, accessLevel]
+            );
+            
+            return res.json({ 
+                success: true, 
+                message: 'Admin user created successfully',
+                adminUrl: `/admin-access/${process.env.ADMIN_TOKEN}`
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Admin creation error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: `Failed to create admin: ${error.message}`
+        });
+    }
+});
+
+
+
+// Admin Route End //
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
