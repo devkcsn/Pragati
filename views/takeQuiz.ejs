@@ -177,126 +177,6 @@
                 flex-direction: column;
             }
         }
-        /* Styling for face detection in fullscreen modal */
-        .rules-container {
-            background-color: #444;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .rules-container h3 {
-            margin-top: 0;
-            color: #f8f9fa;
-        }
-
-        .rules-container ul {
-            padding-left: 20px;
-            margin: 10px 0 0;
-        }
-
-        .rules-container li {
-            margin: 10px 0;
-            line-height: 1.5;
-        }
-
-        .warning-icon {
-            color: #ffc107;
-            margin-right: 5px;
-        }
-
-        #startup-video-container {
-            width: 100%;
-            max-width: 400px;
-            height: 300px;
-            margin: 0 auto 20px;
-            border: 3px solid #007bff;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        #startup-video-feed {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        #face-detection-status {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: rgba(0,0,0,0.7);
-            color: white;
-            padding: 8px 0;
-            text-align: center;
-        }
-
-        #face-detection-instructions {
-            margin: 10px 0 20px;
-            font-weight: bold;
-            color: #f8f9fa;
-        }
-
-        /* Violation modal styles */
-        .violation {
-            background-color: #dc3545;
-            text-align: center;
-        }
-
-        .progress-bar {
-            background-color: #444;
-            height: 10px;
-            border-radius: 5px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-
-        #submission-progress {
-            height: 100%;
-            width: 0%;
-            background-color: white;
-            border-radius: 5px;
-            transition: width 2s linear;
-        }
-
-        /* Video feed during quiz */
-        #video-feed-container {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            width: 180px;
-            height: 135px;
-            border: 2px solid #444;
-            border-radius: 5px;
-            overflow: hidden;
-            z-index: 1000;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        /* Face monitoring warning */
-        #face-monitoring-warning {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(220, 53, 69, 0.9);
-            color: white;
-            padding: 25px 40px;
-            border-radius: 10px;
-            z-index: 2000;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
-            animation: pulse 1s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { box-shadow: 0 0 30px rgba(0,0,0,0.7); }
-            to { box-shadow: 0 0 30px rgba(255,0,0,0.7); }
-        }
     </style>
 </head>
 <body>
@@ -306,45 +186,10 @@
             <div class="fullscreen-icon">
                 <i class="fas fa-expand"></i>
             </div>
-            <h2>Prepare for Quiz</h2>
-            
-            <div id="startup-video-container">
-                <video id="startup-video-feed" autoplay playsinline></video>
-                <div id="face-detection-status">
-                    <i class="fas fa-spinner fa-spin"></i> Initializing camera...
-                </div>
-            </div>
-            
-            <div class="rules-container">
-                <h3>Important Rules:</h3>
-                <ul>
-                    <li><i class="fas fa-exclamation-triangle warning-icon"></i> <strong>Keep your face visible</strong> in the camera frame at all times</li>
-                    <li><i class="fas fa-exclamation-triangle warning-icon"></i> <strong>Looking away</strong> from the screen for more than 8 seconds will result in automatic submission</li>
-                    <li><i class="fas fa-exclamation-triangle warning-icon"></i> <strong>Exiting fullscreen mode</strong> will immediately submit your quiz</li>
-                    <li><i class="fas fa-exclamation-triangle warning-icon"></i> <strong>Switching tabs or windows</strong> is not allowed</li>
-                </ul>
-            </div>
-            
-            <div id="face-detection-instructions">
-                <p>Position your face properly in the frame above to continue.</p>
-            </div>
-            
-            <button id="enter-fullscreen-btn" disabled>Enter Fullscreen & Start Quiz</button>
-        </div>
-    </div>
-    
-    <!-- Violation Modal (for fullscreen exit) -->
-    <div id="violation-modal" class="modal-overlay" style="display: none;">
-        <div class="fullscreen-content violation">
-            <div class="fullscreen-icon">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-            <h2>Security Violation Detected</h2>
-            <p>You have exited fullscreen mode.</p>
-            <p>Your quiz is being automatically submitted...</p>
-            <div class="progress-bar">
-                <div id="submission-progress"></div>
-            </div>
+            <h2>Fullscreen Required</h2>
+            <p>This quiz must be taken in fullscreen mode to ensure academic integrity. Please click the button below to enter fullscreen mode and begin your quiz.</p>
+            <p><strong>Warning:</strong> Exiting fullscreen mode during the quiz will pause the quiz until you return to fullscreen.</p>
+            <button id="enter-fullscreen-btn">Enter Fullscreen & Start Quiz</button>
         </div>
     </div>
     
