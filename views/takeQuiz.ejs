@@ -13,6 +13,18 @@
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
+            /* Prevent text selection */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        /* Prevent highlighting and text selection on quiz elements */
+        .quiz-section, .question, .question-answer, .navbar, .container {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .navbar {
             background-color: #333;
@@ -256,9 +268,7 @@
         let faceMonitoringActive = false;
         let lookingAwayStartTime = null;
         let lookingAway = false;
-        let faceMonitoringWarningSent = false;
-
-        // Start everything when page loads
+        let faceMonitoringWarningSent = false;        // Start everything when page loads
         document.addEventListener('DOMContentLoaded', () => {
             // Initially hide the fullscreen indicator
             document.getElementById('fullscreen-indicator').style.display = 'none';
@@ -278,8 +288,29 @@
             document.addEventListener('mozfullscreenchange', handleFullscreenChange);
             document.addEventListener('MSFullscreenChange', handleFullscreenChange);
             
+            // Disable right-click context menu
+            document.addEventListener('contextmenu', preventRightClick);
+            
+            // Disable keyboard shortcuts for developer tools and copying
+            document.addEventListener('keydown', preventDevToolsShortcuts);
+            
+            // Disable text selection by preventing mouse down events
+            document.addEventListener('mousedown', preventTextSelection);
+            
+            // Detect DevTools opening
+            window.addEventListener('devtoolschange', handleDevToolsChange);
+            setupDevToolsDetection();
+            
             // Set up form submission
             document.getElementById('submit-quiz').addEventListener('click', () => submitQuiz(false));
+
+            // Disable right-click, F12, and developer tools
+            document.addEventListener('contextmenu', event => event.preventDefault());
+            document.addEventListener('keydown', event => {
+                if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J' || event.key === 'C'))) {
+                    event.preventDefault();
+                }
+            });
         });
         
         // Function to enter fullscreen and start quiz
@@ -967,23 +998,178 @@
             }
         }
 
-        // Face Detection End //
-
+                // Face Detection End //
+        
         function cleanupQuizResources() {
-        // Stop timer
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
+            // Stop timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            // Stop face monitoring
+            stopFaceMonitoring();
+            
+            // Stop tab focus enforcement
+            stopTabFocusEnforcement();
+            
+            // Remove event listeners
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
+    
+    // Prevent right-click context menu
+    function preventRightClick(e) {
+        if (quizActive) {
+            e.preventDefault();
+            e.stopPropagation();
+            recordSecurityIssue('right-click-attempt');
+            return false;
+        }
+    }
+    
+    // Prevent keyboard shortcuts for developer tools
+    function preventDevToolsShortcuts(e) {
+        if (!quizActive) return;
+        
+        // Check for common developer tools shortcuts
+        const key = e.key || e.keyCode;
+        
+        // F12 key
+        if (key === 'F12' || key === 123) {
+            e.preventDefault();
+            recordSecurityIssue('f12-key-pressed');
+            return false;
         }
         
-        // Stop face monitoring
-        stopFaceMonitoring();
+        // Ctrl+Shift+I or Ctrl+Shift+J or Ctrl+Shift+C (Chrome, Firefox, Edge)
+        if (e.ctrlKey && e.shiftKey && (key === 'I' || key === 'i' || key === 'J' || key === 'j' || key === 'C' || key === 'c')) {
+            e.preventDefault();
+            recordSecurityIssue('developer-tools-shortcut');
+            return false;
+        }
         
-        // Stop tab focus enforcement
-        stopTabFocusEnforcement();
+        // Ctrl+Shift+K (Firefox Browser Console)
+        if (e.ctrlKey && e.shiftKey && (key === 'K' || key === 'k')) {
+            e.preventDefault();
+            recordSecurityIssue('developer-tools-shortcut');
+            return false;
+        }
         
-        // Remove event listeners
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        // Command+Option+I (Mac)
+        if (e.metaKey && e.altKey && (key === 'I' || key === 'i')) {
+            e.preventDefault();
+            recordSecurityIssue('developer-tools-shortcut');
+            return false;
+        }
+        
+        // Ctrl+U (View Source)
+        if (e.ctrlKey && (key === 'U' || key === 'u')) {
+            e.preventDefault();
+            recordSecurityIssue('view-source-attempt');
+            return false;
+        }
+        
+        // Ctrl+C (Copy)
+        if (e.ctrlKey && (key === 'C' || key === 'c') && !e.shiftKey) {
+            e.preventDefault();
+            recordSecurityIssue('copy-attempt');
+            return false;
+        }
+    }
+    
+    // Prevent text selection
+    function preventTextSelection(e) {
+        if (quizActive) {
+            // Allow selection only on form elements where it's needed
+            if (e.target.tagName.toLowerCase() !== 'input' && 
+                e.target.tagName.toLowerCase() !== 'textarea') {
+                e.preventDefault();
+            }
+        }
+    }
+    
+    // Function to detect if DevTools are open
+    function setupDevToolsDetection() {
+        let devtools = {
+            isOpen: false,
+            orientation: null
+        };
+        
+        const threshold = 160;
+        
+        const emitDevToolsState = (isOpen, orientation) => {
+            if (quizActive && isOpen) {
+                recordSecurityIssue('dev-tools-opened');
+                alert("Developer tools are not allowed during the quiz. This attempt has been recorded.");
+                
+                // Increment exit count and check if auto-submit needed
+                exitCount++;
+                if (exitCount >= 3) {
+                    setTimeout(() => {
+                        alert("You've violated exam policies multiple times. Your quiz will now be submitted.");
+                        submitQuiz(true);
+                    }, 100);
+                }
+            }
+            
+            window.dispatchEvent(new CustomEvent('devtoolschange', {
+                detail: {
+                    isOpen: isOpen,
+                    orientation: orientation
+                }
+            }));
+        };
+        
+        // Check every half-second
+        setInterval(() => {
+            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            const orientation = widthThreshold ? 'vertical' : 'horizontal';
+            
+            if (
+                !(heightThreshold && widthThreshold) &&
+                ((window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) ||
+                widthThreshold ||
+                heightThreshold)
+            ) {
+                if (!devtools.isOpen || devtools.orientation !== orientation) {
+                    emitDevToolsState(true, orientation);
+                }
+                
+                devtools.isOpen = true;
+                devtools.orientation = orientation;
+            } else {
+                if (devtools.isOpen) {
+                    emitDevToolsState(false, null);
+                }
+                
+                devtools.isOpen = false;
+                devtools.orientation = null;
+            }
+        }, 500);
+        
+        // Also try to detect through console methods
+        const consoleOpenDetection = () => {
+            const startTime = new Date();
+            debugger;
+            const endTime = new Date();
+            
+            if (endTime - startTime > 100) {
+                if (quizActive) {
+                    recordSecurityIssue('debugger-breakpoint-detected');
+                }
+            }
+        };
+        
+        // Run console detection check periodically
+        setInterval(consoleOpenDetection, 1000);
+    }
+    
+    // Handle DevTools state change
+    function handleDevToolsChange(e) {
+        if (quizActive && e.detail.isOpen) {
+            // Already being handled in setupDevToolsDetection
+        }
     }
     </script>
 </body>
