@@ -198,10 +198,9 @@
                 <i class="fas fa-expand"></i>
             </div>
             <h2>Fullscreen Required</h2>
-            <p>This quiz must be taken in fullscreen mode to ensure academic integrity. Please click the button below to enter fullscreen mode and begin your quiz.</p>
-              <div style="background-color: #dc3545; color: white; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: center; font-weight: bold; border: 2px solid #fff; animation: pulse 1.5s infinite;">
+            <p>This quiz must be taken in fullscreen mode to ensure academic integrity. Please click the button below to enter fullscreen mode and begin your quiz.</p>              <div style="background-color: #dc3545; color: white; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: center; font-weight: bold; border: 2px solid #fff; animation: pulse 1.5s infinite;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 10px;"></i>
-                <span style="font-size: 18px;">WARNING: EXITING FULLSCREEN EVEN ONCE WILL RESULT IN AUTOMATIC SUBMISSION</span>
+                <span style="font-size: 18px;">WARNING: EXITING FULLSCREEN OR LOOKING AWAY FOR 8+ SECONDS WILL RESULT IN AUTOMATIC SUBMISSION</span>
             </div>
             <style>
                 @keyframes pulse {
@@ -211,7 +210,7 @@
                 }
             </style>
             
-            <p><strong>IMPORTANT:</strong> Exiting fullscreen mode at any point during the exam is strictly prohibited and will result in immediate submission of your quiz and a security violation report.</p>
+            <p><strong>IMPORTANT:</strong> Exiting fullscreen mode or looking away from the screen for 8+ seconds at any point during the exam is strictly prohibited and will result in immediate submission of your quiz and a security violation report.</p>
             <button id="enter-fullscreen-btn">Enter Fullscreen & Start Quiz</button>
         </div>
     </div>
@@ -363,6 +362,9 @@
         // Show fullscreen indicator and main content
         document.getElementById('fullscreen-indicator').style.display = 'flex';
         document.getElementById('main-content').style.display = 'block';
+        
+        // Reset any face monitoring warning flags when starting the quiz
+        faceMonitoringWarningSent = false;
         
         // Set quiz as active
         quizActive = true;
@@ -542,6 +544,60 @@
         document.body.appendChild(violationWarning);
         
         // Submit quiz after a short delay to allow warning to be seen
+        setTimeout(() => {
+            submitQuiz(true);
+        }, 3000);
+    }
+
+    // Function to show looking away violation warning and auto-submit quiz
+    function showLookingAwayViolationWarning() {
+        // Create looking away violation warning element
+        const violationWarning = document.createElement('div');
+        violationWarning.id = 'looking-away-violation-warning';
+        violationWarning.style.position = 'fixed';
+        violationWarning.style.top = '0';
+        violationWarning.style.left = '0';
+        violationWarning.style.width = '100%';
+        violationWarning.style.height = '100%';
+        violationWarning.style.backgroundColor = 'rgba(220, 0, 0, 0.95)';
+        violationWarning.style.color = 'white';
+        violationWarning.style.display = 'flex';
+        violationWarning.style.flexDirection = 'column';
+        violationWarning.style.justifyContent = 'center';
+        violationWarning.style.alignItems = 'center';
+        violationWarning.style.zIndex = '3000';
+        violationWarning.style.textAlign = 'center';
+        violationWarning.style.padding = '20px';
+        
+        // Create warning content
+        const warningIcon = document.createElement('div');
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>';
+        
+        const warningTitle = document.createElement('h1');
+        warningTitle.textContent = 'EXAM VIOLATION DETECTED';
+        warningTitle.style.fontSize = '36px';
+        warningTitle.style.marginBottom = '20px';
+        
+        const warningMessage = document.createElement('p');
+        warningMessage.textContent = 'You have been looking away for too long. This is a violation of exam rules.';
+        warningMessage.style.fontSize = '24px';
+        warningMessage.style.marginBottom = '20px';
+        
+        const warningSubmitting = document.createElement('p');
+        warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
+        warningSubmitting.style.fontSize = '20px';
+        warningSubmitting.style.marginBottom = '30px';
+        
+        // Add elements to warning
+        violationWarning.appendChild(warningIcon);
+        violationWarning.appendChild(warningTitle);
+        violationWarning.appendChild(warningMessage);
+        violationWarning.appendChild(warningSubmitting);
+        
+        // Add to body
+        document.body.appendChild(violationWarning);
+        
+        // Auto-submit after showing the warning for 3 seconds
         setTimeout(() => {
             submitQuiz(true);
         }, 3000);
@@ -749,11 +805,16 @@
             }
               // Clean up timers, event listeners and UI elements
             cleanupQuizResources();
-            
-            // Remove fullscreen violation warning if it exists
+              // Remove fullscreen violation warning if it exists
             const fullscreenViolationWarning = document.getElementById('fullscreen-violation-warning');
             if (fullscreenViolationWarning) {
                 document.body.removeChild(fullscreenViolationWarning);
+            }
+            
+            // Remove looking away violation warning if it exists
+            const lookingAwayViolationWarning = document.getElementById('looking-away-violation-warning');
+            if (lookingAwayViolationWarning) {
+                document.body.removeChild(lookingAwayViolationWarning);
             }
     
             
@@ -823,13 +884,13 @@
                     throw new Error(error.message || 'Failed to submit quiz');
                 }
                 
-                const result = await response.json();
-                  // Show submission success message - customize based on whether it was due to a security violation
+                const result = await response.json();                // Show submission success message - customize based on whether it was due to a security violation
                 const fullscreenViolation = document.getElementById('fullscreen-violation-warning') !== null;
+                const lookingAwayViolation = document.getElementById('looking-away-violation-warning') !== null;
                 
-                if (fullscreenViolation) {
-                    // For fullscreen violations, don't show alert as we already have a visible warning
-                    console.log("Quiz auto-submitted due to fullscreen violation");
+                if (fullscreenViolation || lookingAwayViolation) {
+                    // For violations, don't show alert as we already have a visible warning
+                    console.log("Quiz auto-submitted due to security violation");
                 } else {
                     alert(`Quiz submitted! ${isAutoSubmit ? '(Auto-submitted due to time limit or security policy)' : ''}\n\nYour score: ${result.score}/${result.total}`);
                 }
@@ -954,17 +1015,20 @@
                             // Reset warning flag
                             faceMonitoringWarningSent = false;
                         }
-                        
-                        // If looking away for too long, send warning record just once
+                          // If looking away for too long, send warning record just once
                         if (lookingAway && data.away_duration >= 8 && !faceMonitoringWarningSent) {
                             faceMonitoringWarningSent = true;
                             recordSecurityIssue('face-monitoring-warning', data.away_duration);
+                            
+                            // Show the full-screen looking away violation warning instead of just an alert
+                            showLookingAwayViolationWarning();
+                            return; // Stop further processing since we're handling the violation
                         }
                         
                         // If auto_submit flag is set to true by the server, auto-submit the quiz
+                        // This is kept as a fallback but won't normally be reached due to the code above
                         if (data.auto_submit && quizActive) {
-                            alert("You've been looking away for too long. Your quiz will now be submitted.");
-                            submitQuiz(true);
+                            showLookingAwayViolationWarning(); // Show the warning first
                         }
                     } catch (err) {
                         console.error('Error processing WebSocket message:', err);
@@ -1047,9 +1111,8 @@
                 const warningElement = document.getElementById('face-monitoring-warning');
                 if (warningElement) {
                     // Make warning more urgent as time increases
-                    if (duration >= 7) {
-                        warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
-                        warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>PLEASE LOOK AT THE SCREEN NOW!';
+                    if (duration >= 7) {                        warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+                        warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>VIOLATION AT 8 SECONDS - PLEASE LOOK AT THE SCREEN NOW!';
                     } else if (duration >= 6) {
                         warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.85)';
                     }
@@ -1058,8 +1121,7 @@
         }
 
                 // Face Detection End //
-        
-        function cleanupQuizResources() {
+          function cleanupQuizResources() {
             // Stop timer
             if (timerInterval) {
                 clearInterval(timerInterval);
@@ -1074,6 +1136,12 @@
             
             // Remove event listeners
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            
+            // Clean up any warning elements
+            const warningElement = document.getElementById('face-monitoring-warning');
+            if (warningElement && warningElement.parentNode) {
+                warningElement.parentNode.removeChild(warningElement);
+            }
         }
     
     // Prevent right-click context menu
