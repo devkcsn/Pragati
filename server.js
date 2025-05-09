@@ -1,61 +1,92 @@
+/**
+ * Pragati Online Exam Platform - Server Entry Point
+ * 
+ * This file serves as the main entry point for the Pragati online exam platform.
+ * It handles routes, authentication, quiz management, and security features.
+ */
+
 // Import required modules
-const express = require('express'); // For creating the server
-const session = require('express-session'); // For session management
-const bodyParser = require('body-parser'); // For parsing request bodies
-const bcrypt = require('bcrypt'); // For password hashing
-const app = express(); // Create an Express application
-const fsPromises = require('fs').promises; // For file system operations
-const cron = require('node-cron'); // For scheduling tasks
-const cors = require('cors'); // For CORS support
-const path = require('path'); // For path resolution
-const fs = require('fs'); // For file system operations
-require('dotenv').config(); // Load environment variables
+const express = require('express');       // Web application framework
+const session = require('express-session');// Session management middleware
+const bodyParser = require('body-parser'); // Request body parsing middleware
+const bcrypt = require('bcrypt');         // Password hashing library
+const app = express();                    // Create Express application instance
+const fsPromises = require('fs').promises;// Promise-based file system operations
+const cron = require('node-cron');        // Task scheduling library
+const cors = require('cors');             // Cross-Origin Resource Sharing middleware
+const path = require('path');             // File path utilities
+const fs = require('fs');                 // File system operations
+require('dotenv').config();               // Environment variable configuration
 
-// Middleware setup 
-app.use(cors());
-app.use(express.static('public'));
-app.use(express.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.set('view engine', 'ejs');
+// Middleware setup
+app.use(cors());                              // Enable CORS for all routes
+app.use(express.static('public'));            // Serve static files from 'public' directory
+app.use(express.urlencoded({ extended: false })); // Parse URL-encoded form data
+app.use(bodyParser.json());                   // Parse JSON request bodies
+app.set('view engine', 'ejs');                // Set EJS as the template engine
 
-// Authentication middleware to protect routes
-// This middleware checks if the user is authenticated before allowing access to certain routes
+/**
+ * Authentication middleware to protect routes
+ * 
+ * This middleware checks if a user is logged in by verifying the session.
+ * If authenticated, the request proceeds; otherwise, redirects to the homepage.
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
-        return next();
+        return next(); // User is authenticated, proceed to the next middleware/route handler
     }
-    res.redirect('/');
+    res.redirect('/'); // User is not authenticated, redirect to homepage
 };
 
-// Session configuration
+/**
+ * Session configuration
+ * 
+ * Configure Express session middleware with security best practices.
+ * Sessions are used to maintain user authentication state.
+ */
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'fallback_secret_key_change_this',
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET || 'fallback_secret_key_change_this', // Secret used to sign the session ID cookie
+    resave: false,                    // Don't save session if unmodified
+    saveUninitialized: false,         // Don't create session until something stored
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        httpOnly: true,               // Cookie not accessible via JavaScript
+        maxAge: 24 * 60 * 60 * 1000   // Cookie expires after 24 hours
     }
 }));
 
-// MySQL Connection Pool 
+/**
+ * MySQL Database Connection Pool
+ * 
+ * Creates a connection pool for MySQL database access using environment variables.
+ * Connection pooling improves performance by reusing connections.
+ */
 const mysql = require('mysql2/promise');
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306,
+    host: process.env.DB_HOST,        // Database host from environment variables
+    user: process.env.DB_USER,        // Database username
+    password: process.env.DB_PASSWORD, // Database password
+    database: process.env.DB_NAME,    // Database name
+    port: process.env.DB_PORT || 3306, // Database port (default: 3306)
 });
 
-// Registration route -- This route handles the registration of both students and coordinators
+/**
+ * Registration Route
+ * 
+ * This endpoint handles user registration for both students and coordinators.
+ * It validates required fields, hashes passwords securely, and stores user data
+ * in the appropriate database table based on the role.
+ */
 app.post('/register', async (req, res) => {
     try {
         console.log("Form submission:", req.body);
         const { role, first_name, last_name, email, phone, username, password } = req.body;
 
-        // Check which fields are missing
+        // Check for missing required fields and compile a list
         const missingFields = [];
         if (!role) missingFields.push('role');
         if (!first_name) missingFields.push('first_name');
@@ -65,6 +96,7 @@ app.post('/register', async (req, res) => {
         if (!username) missingFields.push('username');
         if (!password) missingFields.push('password');
         
+        // Return error with list of missing fields if any are missing
         if (missingFields.length > 0) {
             console.log("Missing fields:", missingFields);
             return res.status(400).json({ 
@@ -281,27 +313,41 @@ app.post("/loginCoordinator", async (req, res) => {
     }
 });
 
-// Face detection //
-
-// Face detection logic start // 
+/**
+ * ===============================
+ * FACE DETECTION & MONITORING
+ * ===============================
+ * 
+ * This section handles face detection and monitoring during exams.
+ * It uses a separate Python service for webcam-based face detection.
+ */
+ 
+// Import face monitoring service module
 const faceMonitorService = require('./face_monitor_service');
 
-// Start face monitoring for a quiz session
+/**
+ * Start face monitoring for a quiz session
+ * 
+ * This endpoint initiates webcam-based face monitoring when a student begins an exam.
+ * It creates a unique session ID for monitoring and returns the WebSocket port for frontend connection.
+ */
 app.post('/api/quiz/:id/start-monitoring', isAuthenticated, async (req, res) => {
+    // Verify the user is a student
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
     
     const quizId = req.params.id;
-    const sessionId = `${req.session.user.id}_${quizId}`;
+    const sessionId = `${req.session.user.id}_${quizId}`; // Create unique session identifier
     
     try {
-        // Start the face monitoring process
+        // Start the face monitoring service process
         const monitoringInfo = await faceMonitorService.startMonitoringSession(sessionId);
         
-        // Record monitoring session in database (optional)
+        // Record monitoring session in database for reporting and analytics
         await recordMonitoringSession(quizId, req.session.user.id, monitoringInfo.websocketPort);
         
+        // Return WebSocket port for frontend to connect to monitoring service
         return res.status(200).json({
             success: true,
             websocketPort: monitoringInfo.websocketPort
@@ -312,18 +358,26 @@ app.post('/api/quiz/:id/start-monitoring', isAuthenticated, async (req, res) => 
     }
 });
 
-// Stop face monitoring for a quiz session
+/**
+ * Stop face monitoring for a quiz session
+ * 
+ * This endpoint terminates the face monitoring process when a student completes or exits an exam.
+ * It cleans up resources and closes the WebSocket connection.
+ */
 app.post('/api/quiz/:id/stop-monitoring', isAuthenticated, async (req, res) => {
+    // Verify the user is a student
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
     
     const quizId = req.params.id;
-    const sessionId = `${req.session.user.id}_${quizId}`;
+    const sessionId = `${req.session.user.id}_${quizId}`; // Use the same session ID format
     
     try {
+        // Tell the face monitoring service to stop this monitoring session
         const result = await faceMonitorService.stopMonitoringSession(sessionId);
         
+        // Return success status and message
         return res.status(200).json({
             success: true,
             message: result.message
@@ -335,28 +389,42 @@ app.post('/api/quiz/:id/stop-monitoring', isAuthenticated, async (req, res) => {
 });
 
 // Add security issue endpoint to record face monitoring violations
+/**
+ * Add security issue endpoint to record face monitoring violations
+ * 
+ * This endpoint specifically handles face monitoring issues like:
+ * - Student looking away from the screen
+ * - Absence of face in camera
+ * - Multiple faces detected
+ * 
+ * Unlike general security issues, this tracks duration of violations
+ */
 app.post('/api/quiz/face-monitoring-issue', isAuthenticated, async (req, res) => {
+    // Verify the user is a student
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
     
+    // Extract data about the face monitoring violation
     const { quizId, issueType, awayDuration, timestamp } = req.body;
     
     try {
         const connection = await pool.getConnection();
         try {
-            // Use the timestamp provided or current time
+            // Use the timestamp provided or current time if not provided
             const now = timestamp ? new Date(timestamp) : new Date();
             const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
             
+            // Record the face monitoring issue with details about away duration
             await connection.execute(
                 'INSERT INTO quiz_security_logs (quiz_id, student_username, issue_type, details, timestamp) VALUES (?, ?, ?, ?, ?)',
                 [quizId, req.session.user.id, issueType, `Looking away for ${awayDuration} seconds`, formattedDate]
             );
             
+            // Return success response
             return res.status(200).json({ success: true });
         } finally {
-            connection.release();
+            connection.release(); // Always release the connection back to the pool
         }
     } catch (err) {
         console.error('Error recording face monitoring issue:', err);
@@ -364,12 +432,22 @@ app.post('/api/quiz/face-monitoring-issue', isAuthenticated, async (req, res) =>
     }
 });
 
-// Helper function to record monitoring session in database
+/**
+ * Helper function to record monitoring session in database
+ * 
+ * This function records when a face monitoring session begins,
+ * which port it's using, and which student/quiz it's associated with.
+ * 
+ * @param {number} quizId - The ID of the quiz being monitored
+ * @param {string} studentId - The ID/username of the student taking the quiz
+ * @param {number} port - The WebSocket port used for the monitoring connection
+ */
 async function recordMonitoringSession(quizId, studentId, port) {
     try {
-        // Check if the table exists
+        // Get database connection from pool
         const connection = await pool.getConnection();
         try {
+            // Check if the monitoring_sessions table exists in the database
             const [tables] = await connection.query(`
                 SELECT TABLE_NAME 
                 FROM information_schema.TABLES 
@@ -617,30 +695,36 @@ app.get('/api/quiz/:id', isAuthenticated, async (req, res) => {
         }
     });
 
-// API endpoint to get quiz duration for students during takeQuiz
+/**
+ * API endpoint to get quiz duration for students during quiz taking
+ * 
+ * This endpoint is called by the frontend to determine how much time
+ * a student has to complete the quiz, which is used for the countdown timer.
+ */
 app.get('/api/quizzes/:quizId/duration', isAuthenticated, async (req, res) => {
     try {
-        const quizId = req.params.quizId;
+        const quizId = req.params.quizId; // Extract quiz ID from URL parameter
         
-        // Get connection from pool
+        // Get connection from the database pool
         const connection = await pool.getConnection();
         
         try {
-            // Query to get quiz duration
+            // Query to get the duration of this specific quiz
             const [rows] = await connection.execute(
                 'SELECT duration FROM quizzes WHERE id = ?',
                 [quizId]
             );
             
+            // Check if quiz exists in database
             if (rows.length === 0) {
                 return res.status(404).json({ message: 'Quiz not found' });
             }
             
-            // Return the duration
+            // Return just the duration value to the frontend
             return res.json({ duration: rows[0].duration });
             
         } finally {
-            connection.release();
+            connection.release(); // Always release the connection back to the pool
         }
     } catch (err) {
         console.error('Error fetching quiz duration:', err);
@@ -650,14 +734,23 @@ app.get('/api/quizzes/:quizId/duration', isAuthenticated, async (req, res) => {
     }
 });
 
-//Quiz submission endpoint handles unanswered questions for students
+/**
+ * Quiz submission endpoint
+ * 
+ * This endpoint handles the submission of completed quizzes, including:
+ * - Automatic submissions due to time expiration or security violations
+ * - Manual submissions by the student
+ * - Handling of unanswered questions
+ * - Scoring the quiz based on correct answers
+ */
 app.post('/api/quiz/:id/submit', isAuthenticated, async (req, res) => {
+    // Only students can submit quizzes
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    const quizId = req.params.id;
-    const { answers, autoSubmitted, allQuestionIds } = req.body;
+    const quizId = req.params.id; // Extract quiz ID from URL parameter
+    const { answers, autoSubmitted, allQuestionIds } = req.body; // Extract submission data
     
     try {
         const connection = await pool.getConnection();
@@ -782,22 +875,27 @@ app.post('/api/quiz/:id/submit', isAuthenticated, async (req, res) => {
     }
 });
 
-// API endpoint to create a quiz for coordinators
+/**
+ * API endpoint to create a new quiz
+ * 
+ * This endpoint allows coordinators to create quizzes with questions and options.
+ * It handles validation of quiz data, scheduled dates, and storing in the database.
+ * All question and answer data is validated before saving.
+ */
 app.post('/api/quizzes', isAuthenticated, async (req, res) => {
     try {
-        // Check if user is a coordinator
+        // Verify the user is a coordinator
         if (req.session.user.role !== 'coordinator') {
             return res.status(403).json({ message: 'Only coordinators can create quizzes' });
         }
 
+        // Extract quiz data from request body
         const { title, description, questions, scheduledDate, deadlineDate, duration } = req.body;
 
-        // Validate required fields
+        // Validate that required fields are present and properly formatted
         if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
             return res.status(400).json({ message: 'Title and at least one question are required' });
-        }
-
-        // Validate scheduled date if provided
+        }        // Parse and validate scheduled start date if provided
         let parsedScheduledDate = null;
         if (scheduledDate) {
             parsedScheduledDate = new Date(scheduledDate);
@@ -806,7 +904,7 @@ app.post('/api/quizzes', isAuthenticated, async (req, res) => {
             }
         }
         
-        // Validate deadline date if provided
+        // Parse and validate deadline date if provided
         let parsedDeadlineDate = null;
         if (deadlineDate) {
             parsedDeadlineDate = new Date(deadlineDate);
@@ -815,60 +913,62 @@ app.post('/api/quizzes', isAuthenticated, async (req, res) => {
             }
         }
         
-        // Validate that deadline is after scheduled date if both are provided
+        // Ensure deadline is chronologically after the scheduled start date
         if (parsedScheduledDate && parsedDeadlineDate && parsedDeadlineDate <= parsedScheduledDate) {
             return res.status(400).json({ message: 'Deadline must be after the scheduled date' });
-        }
-
+        }        // Get database connection from pool
         const connection = await pool.getConnection();
         
         try {
-            // Begin transaction
+            // Begin database transaction for data integrity
             await connection.beginTransaction();
             
-            // Insert quiz record with scheduled date, deadline date, and duration
+            // Insert the main quiz record into the database
             const [quizResult] = await connection.execute(
                 'INSERT INTO quizzes (title, description, created_by, scheduled_date, deadline_date, duration, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [
-                    title, 
-                    description || '', 
-                    req.session.user.id, 
-                    parsedScheduledDate, 
-                    parsedDeadlineDate,
-                    duration || 30, // Default to 30 minutes if not specified
-                    parsedScheduledDate ? false : true
+                    title,                          // Quiz title
+                    description || '',              // Quiz description (empty string if not provided)
+                    req.session.user.id,            // Creator's username
+                    parsedScheduledDate,            // When the quiz becomes available
+                    parsedDeadlineDate,             // When the quiz closes
+                    duration || 30,                 // Quiz duration in minutes (default: 30)
+                    parsedScheduledDate ? false : true // Quiz is active immediately if no scheduled date
                 ]
             );
+              const quizId = quizResult.insertId; // Get the ID of the newly created quiz
             
-            const quizId = quizResult.insertId;
-            
-            // Insert questions
+            // Insert all questions for this quiz
             for (const question of questions) {
+                // Validate question format
                 if (!question.text || !question.options || !Array.isArray(question.options)) {
                     throw new Error('Invalid question format');
                 }
                 
+                // Insert the question into the database
                 const [questionResult] = await connection.execute(
                     'INSERT INTO questions (quiz_id, question_text) VALUES (?, ?)',
                     [quizId, question.text]
                 );
                 
-                const questionId = questionResult.insertId;
+                const questionId = questionResult.insertId; // Get the ID of the newly created question
                 
-                // Insert options
+                // Insert all options for this question
                 for (const option of question.options) {
+                    // Skip options without text
                     if (!option.text) continue;
                     
+                    // Insert the option into the database
                     await connection.execute(
                         'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
-                        [questionId, option.text, option.isCorrect ? 1 : 0]
+                        [questionId, option.text, option.isCorrect ? 1 : 0] // Convert boolean to 1/0 for MySQL
                     );
                 }
             }
-            
-            // Commit transaction
+              // Commit transaction to finalize database changes
             await connection.commit();
             
+            // Return success response with the created quiz ID
             return res.status(201).json({ 
                 success: true,
                 message: 'Quiz created successfully',
@@ -876,13 +976,14 @@ app.post('/api/quizzes', isAuthenticated, async (req, res) => {
             });
             
         } catch (err) {
-            // Rollback on error
+            // Rollback transaction on error to maintain data integrity
             await connection.rollback();
             console.error('Database error:', err);
             return res.status(500).json({ 
                 message: 'Error creating quiz: ' + err.message 
             });
         } finally {
+            // Always release the connection back to the pool
             connection.release();
         }
     } catch (err) {
@@ -893,12 +994,24 @@ app.post('/api/quizzes', isAuthenticated, async (req, res) => {
     }
 });
 
-// Log security issues during quiz
+/**
+ * Log security issues during quiz
+ * 
+ * This endpoint records security violations during quiz attempts such as:
+ * - Tab switching attempts
+ * - Right-click attempts
+ * - Fullscreen exit
+ * - Developer tools usage
+ * - Copy/paste attempts
+ * - Other integrity violations
+ * 
+ * Security logs are stored in the database for later review by coordinators.
+ */
 app.post('/api/quiz/security-issue', async (req, res) => {
-    const { quizId, issueType, timestamp } = req.body;
+    const { quizId, issueType, timestamp } = req.body; // Extract data from request body
     
     try {
-        // Validate that required parameters are present
+        // Validate that all required parameters are present
         if (!quizId || !issueType || !timestamp) {
             return res.status(400).json({ 
                 success: false, 
@@ -906,16 +1019,17 @@ app.post('/api/quiz/security-issue', async (req, res) => {
             });
         }
         
-        // Convert ISO string to MySQL datetime format
+        // Convert ISO string to MySQL datetime format for database storage
         const dateObj = new Date(timestamp);
         const mysqlTimestamp = dateObj.toISOString().slice(0, 19).replace('T', ' ');
         
-        // Use pool instead of connection and ensure all parameters are defined
+        // Insert security violation record directly using the connection pool
         await pool.execute(
             'INSERT INTO quiz_security_logs (quiz_id, student_username, issue_type, timestamp) VALUES (?, ?, ?, ?)',
             [quizId, req.session.user.id, issueType, mysqlTimestamp]
         );
         
+        // Return success response
         res.status(200).json({ success: true });
     } catch (error) {
         console.error("Error logging security issue:", error);
@@ -946,19 +1060,41 @@ app.get('/loginCoordinator', (req, res) => {
     res.render('loginCoordinator'); // This looks for views/loginCoordinator.ejs 
 });
 
-// Student dashboard routes
+/**
+ * Student Dashboard Route
+ * 
+ * This route renders the student dashboard page, showing:
+ * - Available quizzes
+ * - Completed quizzes
+ * - Student statistics
+ * - Navigation options
+ */
 app.get('/studentDashboard', isAuthenticated, (req, res) => {
+    // Verify the user is a student, redirect to homepage if not
     if (req.session.user.role !== 'student') {
         return res.redirect('/');
     }
+    
+    // Render the student dashboard with user information
     res.render('studentDashboard', { user: req.session.user });
 });
 
-//Coordinator dashboard routes
+/**
+ * Coordinator Dashboard Route
+ * 
+ * This route renders the coordinator dashboard page, showing:
+ * - Created quizzes
+ * - Quiz statistics
+ * - Student performance data
+ * - Quiz management options
+ */
 app.get('/coordinatorDashboard', isAuthenticated, (req, res) => {
+    // Verify the user is a coordinator, redirect to homepage if not
     if (req.session.user.role !== 'coordinator') {
         return res.redirect('/');
     }
+    
+    // Render the coordinator dashboard with user information
     res.render('coordinatorDashboard', { user: req.session.user });
 });
 // Dashboard stats API endpoint for coordinators
@@ -1040,37 +1176,52 @@ app.get('/viewQuizzes', isAuthenticated, (req, res) => {
     }
     res.render('viewQuizzes', { user: req.session.user });
 });
-// This runs every minute to check for quizzes that need to be activated
+/**
+ * Scheduled Quiz Activation Job
+ * 
+ * This cron job runs every minute to automatically activate quizzes
+ * when their scheduled start time is reached. It changes the 'is_active'
+ * flag so students can access the quiz when the scheduled time arrives.
+ * 
+ * Cron pattern: '* * * * *' = run every minute
+ */
 cron.schedule('* * * * *', async () => {
-    console.log('Running quiz activation check...');
+    console.log('Running scheduled quiz activation check...');
     try {
+        // Get database connection from pool
         const connection = await pool.getConnection();
         try {
-            // Find quizzes where scheduled date has passed but they're not active yet
+            // Find and update quizzes where scheduled date has passed but they're not active yet
             const [quizzes] = await connection.execute(
                 'UPDATE quizzes SET is_active = TRUE WHERE scheduled_date <= NOW() AND is_active = FALSE'
             );
             
+            // Log the activation if any quizzes were activated
             if (quizzes.affectedRows > 0) {
-                console.log(`Activated ${quizzes.affectedRows} quizzes`);
+                console.log(`Automatically activated ${quizzes.affectedRows} quiz(es) at ${new Date().toISOString()}`);
             }
         } catch (err) {
             console.error('Error in quiz activation job:', err);
         } finally {
-            connection.release();
+            connection.release(); // Always release the database connection
         }
     } catch (err) {
-        console.error('Failed to get database connection for quiz activation:', err);
+        console.error('Failed to get database connection for quiz activation job:', err);
     }
 });
 
-// Logout route
+/**
+ * Logout route
+ * 
+ * Handles user logout by destroying their session and redirecting to homepage.
+ * This endpoint is used by both students and coordinators.
+ */
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             console.error('Error destroying session:', err);
         }
-        res.redirect('/');
+        res.redirect('/'); // Redirect to homepage after logout
     });
 });
 
@@ -1118,15 +1269,23 @@ app.get('/availableQuizzes', isAuthenticated, async (req, res) => {
     }
 });
 
-// Route to take a specific quiz
+/**
+ * Route to take a specific quiz
+ * 
+ * This route renders the quiz-taking interface for a specific quiz ID.
+ * It validates the quiz is active, checks if the student has already taken it,
+ * and loads all questions and options for the quiz.
+ */
 app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
+    // Verify the user is a student
     if (req.session.user.role !== 'student') {
-        return res.redirect('/');
+        return res.redirect('/'); // Redirect non-students to homepage
     }
     
-    const quizId = req.params.id;
+    const quizId = req.params.id; // Get quiz ID from URL parameter
     
     try {
+        // Get database connection from pool
         const connection = await pool.getConnection();
         try {
             // Check if quiz exists and is active
@@ -1135,6 +1294,7 @@ app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
                 [quizId]
             );
             
+            // If quiz doesn't exist or isn't active, show error page
             if (quizzes.length === 0) {
                 return res.status(404).render('error', { 
                     message: 'Quiz not found or not available' 
@@ -1148,7 +1308,7 @@ app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
                 'SELECT * FROM quiz_attempts WHERE quiz_id = ? AND student_username = ?',
                 [quizId, req.session.user.id]
             );
-            
+              // If student has already taken this quiz, show completion page
             if (attempts.length > 0) {
                 return res.render('quizCompleted', {
                     user: req.session.user,
@@ -1163,20 +1323,20 @@ app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
                 [quizId]
             );
             
-            // Get all options for these questions
+            // Get all options for these questions (without showing correct answers)
             for (let question of questions) {
                 const [options] = await connection.execute(
                     'SELECT id, option_text FROM options WHERE question_id = ?',
                     [question.id]
                 );
-                question.options = options;
+                question.options = options; // Attach options to each question
             }
             
-            // Render the quiz page
+            // Render the quiz-taking page with all necessary data
             res.render('takeQuiz', {
-                user: req.session.user,
-                quiz: quiz,
-                questions: questions,
+                user: req.session.user,      // Pass user information
+                quiz: quiz,                  // Pass quiz details
+                questions: questions,        // Pass questions with options
                 duration: quiz.duration || 30 // Default to 30 minutes if not specified
             });
         } finally {
@@ -1557,6 +1717,15 @@ app.post(`/admin-login/${process.env.ADMIN_TOKEN}`, async (req, res) => {
 
 // Admin dashboard
 
+/**
+ * Admin Dashboard Route
+ * 
+ * This route renders the administrator dashboard with system statistics
+ * and recent activity data. It provides an overview of the platform usage
+ * and access to various administrative functions.
+ * 
+ * The route is protected by a token and admin session authentication.
+ */
 app.get(`/admin-dashboard/${process.env.ADMIN_TOKEN}`, async (req, res) => {
     // Check if admin is logged in
     if (!req.session.admin) {
@@ -1567,14 +1736,13 @@ app.get(`/admin-dashboard/${process.env.ADMIN_TOKEN}`, async (req, res) => {
         const connection = await pool.getConnection();
         
         try {
-            // Get system statistics
+            // Collect system statistics from the database
             const [studentCount] = await connection.execute('SELECT COUNT(*) as count FROM students');
             const [coordinatorCount] = await connection.execute('SELECT COUNT(*) as count FROM coordinators');
             const [quizCount] = await connection.execute('SELECT COUNT(*) as count FROM quizzes');
             const [attemptCount] = await connection.execute('SELECT COUNT(*) as count FROM quiz_attempts');
             const [securityLogs] = await connection.execute('SELECT COUNT(*) as count FROM quiz_security_logs');
-            
-            // Get latest data
+              // Retrieve recent user registrations (both students and coordinators)
             const [recentUsers] = await connection.execute(`
                 (SELECT 'student' AS role, username, first_name, last_name, email 
                 FROM students ORDER BY username DESC LIMIT 5)
@@ -1584,6 +1752,7 @@ app.get(`/admin-dashboard/${process.env.ADMIN_TOKEN}`, async (req, res) => {
                 LIMIT 10
             `);
             
+            // Retrieve recently created quizzes for the admin dashboard
             const [recentQuizzes] = await connection.execute(`
                 SELECT id, title, created_by, created_date, is_active 
                 FROM quizzes 
@@ -1615,15 +1784,20 @@ app.get(`/admin-dashboard/${process.env.ADMIN_TOKEN}`, async (req, res) => {
         });
     }
 });
-  
-  // API endpoint to get paginated data for each table
+    /**
+   * API endpoint for admin data retrieval with pagination
+   * 
+   * This endpoint allows administrators to retrieve data from any table
+   * in the database with pagination support. It includes security measures
+   * to prevent SQL injection by validating table names.
+   */
   app.get('/api/admin/data/:table', isAdminAuthenticated, async (req, res) => {
       try {
           const { table } = req.params;
           const { page = 1, limit = 10 } = req.query;
           const offset = (page - 1) * limit;
           
-          // Validate table name to prevent SQL injection
+          // Validate table name against whitelist to prevent SQL injection
           const allowedTables = [
               'students', 'coordinators', 'quizzes', 'questions', 
               'options', 'quiz_attempts', 'quiz_answers', 'quiz_security_logs'
@@ -1820,13 +1994,23 @@ process.on('uncaughtException', (err) => {
 });
 
 // Cleanup function for graceful shutdown
+/**
+ * Cleanup function for graceful server shutdown
+ * 
+ * This function ensures proper cleanup of resources when the server shuts down:
+ * - Closes the HTTP server to stop accepting new connections
+ * - Closes all database connections properly
+ * - Clears all active sessions
+ * 
+ * The cleanup process is executed when the server receives termination signals.
+ */
 function cleanup() {
-    console.log('Starting cleanup...');
+    console.log('Starting cleanup process...');
     
     // Create a promise to handle server shutdown
     const serverClose = new Promise((resolve) => {
         server.close(() => {
-            console.log('Server closed');
+            console.log('HTTP server closed successfully');
             resolve();
         });
     });
@@ -1835,10 +2019,10 @@ function cleanup() {
     const poolClose = new Promise((resolve, reject) => {
         pool.end((err) => {
             if (err) {
-                console.error('Error closing database pool:', err);
+                console.error('Error closing database connection pool:', err);
                 reject(err);
             } else {
-                console.log('Database pool closed');
+                console.log('Database connection pool closed successfully');
                 resolve();
             }
         });
@@ -1867,12 +2051,23 @@ function cleanup() {
         });
 }
 
-// Register cleanup handlers
+/**
+ * Register cleanup handlers for graceful shutdown
+ * 
+ * The application listens for termination signals (SIGTERM, SIGINT)
+ * and performs cleanup operations before shutting down.
+ */
 process.on('SIGTERM', cleanup);
 process.on('SIGINT', cleanup);
 
-// Start the server (replace the existing app.listen call)
-const PORT = process.env.PORT || 3000;
+/**
+ * Start the Express server
+ * 
+ * Initialize the server on the specified port (from environment variables or default 3000).
+ * This is the final step that makes the application available to users.
+ */
+const PORT = process.env.PORT || 3000; // Use PORT from environment variables or default to 3000
 const server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Pragati Online Exam Platform server running on port ${PORT}`);
+    console.log(`Server started at: ${new Date().toISOString()}`);
 });
