@@ -125,30 +125,30 @@
             color: white;
             text-align: center;
             backdrop-filter: blur(5px);
-        }
-        .fullscreen-content {
+        }        .fullscreen-content {
             background-color: #333;
             padding: 40px;
             border-radius: 10px;
-            max-width: 600px;
+            max-width: 650px;
             width: 90%;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
         }
         .fullscreen-content h2 {
             margin-top: 0;
             color: #fff;
-            font-size: 24px;
+            font-size: 28px;
+            margin-bottom: 20px;
         }
         .fullscreen-content p {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             font-size: 16px;
             line-height: 1.6;
-        }
-        #enter-fullscreen-btn, #return-fullscreen-btn {
-            padding: 12px 30px;
+        }        #enter-fullscreen-btn, #return-fullscreen-btn {
+            padding: 15px 30px;
             background-color: #007bff;
             color: white;
             border: none;
+            font-weight: bold;
             border-radius: 5px;
             font-size: 18px;
             cursor: pointer;
@@ -191,8 +191,7 @@
         }
     </style>
 </head>
-<body>
-    <!-- Initial Fullscreen Modal -->
+<body>    <!-- Initial Fullscreen Modal -->
     <div id="fullscreen-modal" class="modal-overlay">
         <div class="fullscreen-content">
             <div class="fullscreen-icon">
@@ -200,7 +199,19 @@
             </div>
             <h2>Fullscreen Required</h2>
             <p>This quiz must be taken in fullscreen mode to ensure academic integrity. Please click the button below to enter fullscreen mode and begin your quiz.</p>
-            <p><strong>Warning:</strong> Exiting fullscreen mode during the quiz will pause the quiz until you return to fullscreen.</p>
+              <div style="background-color: #dc3545; color: white; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: center; font-weight: bold; border: 2px solid #fff; animation: pulse 1.5s infinite;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 10px;"></i>
+                <span style="font-size: 18px;">WARNING: EXITING FULLSCREEN EVEN ONCE WILL RESULT IN AUTOMATIC SUBMISSION</span>
+            </div>
+            <style>
+                @keyframes pulse {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.8; }
+                    100% { opacity: 1; }
+                }
+            </style>
+            
+            <p><strong>IMPORTANT:</strong> Exiting fullscreen mode at any point during the exam is strictly prohibited and will result in immediate submission of your quiz and a security violation report.</p>
             <button id="enter-fullscreen-btn">Enter Fullscreen & Start Quiz</button>
         </div>
     </div>
@@ -261,14 +272,14 @@
         let exitCount = 0;
         let timerPausedAt = null; // For pausing the timer when exiting fullscreen
         let endTime = null; // To calculate remaining time when returning from pause
-        let tabFocusInterval; // For preventing tab switching
-
-        //Face detection variables
+        let tabFocusInterval; // For preventing tab switching        // Face detection variables - monitoring starts only after quiz begins
         let websocket;
         let faceMonitoringActive = false;
         let lookingAwayStartTime = null;
         let lookingAway = false;
-        let faceMonitoringWarningSent = false;        // Start everything when page loads
+        let faceMonitoringWarningSent = false;
+        
+        // Start everything when page loads
         document.addEventListener('DOMContentLoaded', () => {
             // Initially hide the fullscreen indicator
             document.getElementById('fullscreen-indicator').style.display = 'none';
@@ -276,11 +287,6 @@
             // Set up fullscreen button event
             document.getElementById('enter-fullscreen-btn').addEventListener('click', enterFullscreenAndStartQuiz);
             document.getElementById('return-fullscreen-btn').addEventListener('click', returnToFullscreenAndResumeQuiz);
-            
-            // Start face monitoring immediately when page loads
-            startFaceMonitoring()
-                .then(() => console.log('Face monitoring initialized successfully'))
-                .catch(err => console.error('Error initializing face monitoring:', err));
             
             // Set up fullscreen change detection - IMPORTANT: Add all vendor prefixes
             document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -300,17 +306,8 @@
             // Detect DevTools opening
             window.addEventListener('devtoolschange', handleDevToolsChange);
             setupDevToolsDetection();
-            
-            // Set up form submission
+              // Set up form submission
             document.getElementById('submit-quiz').addEventListener('click', () => submitQuiz(false));
-
-            // Disable right-click, F12, and developer tools
-            document.addEventListener('contextmenu', event => event.preventDefault());
-            document.addEventListener('keydown', event => {
-                if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J' || event.key === 'C'))) {
-                    event.preventDefault();
-                }
-            });
         });
         
         // Function to enter fullscreen and start quiz
@@ -354,8 +351,7 @@
                 resumeQuiz();
             }
         }
-        
-        // Start the quiz after fullscreen is entered
+          // Start the quiz after fullscreen is entered
         function startQuiz() {
         // Remove blur from main content
         document.getElementById('main-content').classList.remove('blurred');
@@ -371,12 +367,8 @@
         // Set quiz as active
         quizActive = true;
         
-        // Ensure we start face monitoring first and then fetch quiz duration
-        startFaceMonitoring()
-            .then(() => {
-                // After face monitoring is initialized, fetch quiz duration
-                return fetchQuizDuration();
-            })
+        // First fetch quiz duration
+        fetchQuizDuration()
             .then(duration => {
                 // Start the timer with the fetched duration
                 startTimer(duration);
@@ -386,6 +378,12 @@
                 
                 // Start tab focus enforcement
                 startTabFocusEnforcement();
+                
+                // Only start face monitoring after quiz has started
+                return startFaceMonitoring();
+            })
+            .then(() => {
+                console.log('Face monitoring initialized successfully');
             })
             .catch(error => {
                 console.error('Error in quiz initialization:', error);
@@ -395,11 +393,14 @@
                 // Setup other monitoring even if one part fails
                 setupVisibilityDetection();
                 startTabFocusEnforcement();
+                
+                // Try to start face monitoring anyway
+                startFaceMonitoring()
+                    .catch(err => console.error('Failed to start face monitoring:', err));
             });
     }
 
-        
-        // Resume the quiz after returning to fullscreen
+          // Resume the quiz after returning to fullscreen
         function resumeQuiz() {
             // Remove blur from main content
             document.getElementById('main-content').classList.remove('blurred');
@@ -413,11 +414,6 @@
             
             // Set quiz as active again
             quizActive = true;
-            
-            // Restart face monitoring if it was stopped
-            if (!faceMonitoringActive) {
-                startFaceMonitoring();
-            }
             
             // Resume the timer if it was paused
             if (timerPausedAt) {
@@ -439,6 +435,13 @@
             
             // Restart tab focus enforcement
             startTabFocusEnforcement();
+            
+            // Restart face monitoring if it was previously active but stopped
+            if (!faceMonitoringActive && quizActive) {
+                startFaceMonitoring()
+                    .then(() => console.log('Face monitoring restarted successfully'))
+                    .catch(err => console.error('Failed to restart face monitoring:', err));
+            }
         }
         
         // Handle fullscreen change event
@@ -463,9 +466,7 @@
                 document.getElementById('main-content').style.display = 'block';
                 document.getElementById('main-content').classList.add('blurred');
             }
-        }
-        
-        // Pause the quiz when exiting fullscreen
+        }        // Pause the quiz when exiting fullscreen
         function pauseQuiz() {
         quizActive = false;
         
@@ -478,25 +479,72 @@
         // Stop tab focus enforcement
         stopTabFocusEnforcement();
         
-        // Show main content but blur it
-        document.getElementById('main-content').style.display = 'block';
-        document.getElementById('main-content').classList.add('blurred');
+        // Temporarily stop face monitoring when exiting fullscreen
+        if (faceMonitoringActive) {
+            stopFaceMonitoring()
+                .then(() => console.log('Face monitoring paused due to fullscreen exit'))
+                .catch(err => console.error('Error pausing face monitoring:', err));
+        }
         
         // Record the security issue
         recordSecurityIssue('exited-fullscreen');
         
-        // Show return to fullscreen modal
-        exitCount++;
-        document.getElementById('fullscreen-exit-count').textContent = exitCount;
-        document.getElementById('return-fullscreen-modal').style.display = 'flex';
+        // Any fullscreen exit is now a violation - show warning and submit quiz
+        showFullscreenViolationWarning();
+    }
+    
+    // Function to show fullscreen violation warning and auto-submit quiz
+    function showFullscreenViolationWarning() {
+        // Create fullscreen violation warning element
+        const violationWarning = document.createElement('div');
+        violationWarning.id = 'fullscreen-violation-warning';
+        violationWarning.style.position = 'fixed';
+        violationWarning.style.top = '0';
+        violationWarning.style.left = '0';
+        violationWarning.style.width = '100%';
+        violationWarning.style.height = '100%';
+        violationWarning.style.backgroundColor = 'rgba(220, 0, 0, 0.95)';
+        violationWarning.style.color = 'white';
+        violationWarning.style.display = 'flex';
+        violationWarning.style.flexDirection = 'column';
+        violationWarning.style.justifyContent = 'center';
+        violationWarning.style.alignItems = 'center';
+        violationWarning.style.zIndex = '3000';
+        violationWarning.style.textAlign = 'center';
+        violationWarning.style.padding = '20px';
         
-        // If maximum exit count reached, auto-submit
-        if (exitCount >= 3) {
-            setTimeout(() => {
-                alert("You've exited fullscreen mode multiple times. Your quiz will now be submitted.");
-                submitQuiz(true);
-            }, 100);
-        }
+        // Create warning content
+        const warningIcon = document.createElement('div');
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>';
+        
+        const warningTitle = document.createElement('h1');
+        warningTitle.textContent = 'EXAM VIOLATION DETECTED';
+        warningTitle.style.fontSize = '36px';
+        warningTitle.style.marginBottom = '20px';
+        
+        const warningMessage = document.createElement('p');
+        warningMessage.textContent = 'You have exited fullscreen mode. This is a violation of exam rules.';
+        warningMessage.style.fontSize = '24px';
+        warningMessage.style.marginBottom = '20px';
+        
+        const warningSubmitting = document.createElement('p');
+        warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
+        warningSubmitting.style.fontSize = '20px';
+        warningSubmitting.style.marginBottom = '30px';
+        
+        // Add elements to warning
+        violationWarning.appendChild(warningIcon);
+        violationWarning.appendChild(warningTitle);
+        violationWarning.appendChild(warningMessage);
+        violationWarning.appendChild(warningSubmitting);
+        
+        // Add to document
+        document.body.appendChild(violationWarning);
+        
+        // Submit quiz after a short delay to allow warning to be seen
+        setTimeout(() => {
+            submitQuiz(true);
+        }, 3000);
     }
 
         // Function to fetch quiz duration from the database
@@ -699,9 +747,14 @@
             } else if (document.msExitFullscreen) {
                 document.msExitFullscreen();
             }
-            
-            // Clean up timers and event listeners
+              // Clean up timers, event listeners and UI elements
             cleanupQuizResources();
+            
+            // Remove fullscreen violation warning if it exists
+            const fullscreenViolationWarning = document.getElementById('fullscreen-violation-warning');
+            if (fullscreenViolationWarning) {
+                document.body.removeChild(fullscreenViolationWarning);
+            }
     
             
             const quizForm = document.getElementById('quiz-form');
@@ -771,9 +824,15 @@
                 }
                 
                 const result = await response.json();
+                  // Show submission success message - customize based on whether it was due to a security violation
+                const fullscreenViolation = document.getElementById('fullscreen-violation-warning') !== null;
                 
-                // Show submission success message
-                alert(`Quiz submitted! ${isAutoSubmit ? '(Auto-submitted due to time limit or security policy)' : ''}\n\nYour score: ${result.score}/${result.total}`);
+                if (fullscreenViolation) {
+                    // For fullscreen violations, don't show alert as we already have a visible warning
+                    console.log("Quiz auto-submitted due to fullscreen violation");
+                } else {
+                    alert(`Quiz submitted! ${isAutoSubmit ? '(Auto-submitted due to time limit or security policy)' : ''}\n\nYour score: ${result.score}/${result.total}`);
+                }
                 
                 // Redirect back to dashboard
                 window.location.href = '/studentDashboard';
