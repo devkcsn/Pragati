@@ -11,11 +11,13 @@ import sys
 
 class FaceMonitor:
     def __init__(self, warning_threshold=8, early_warning_threshold=4):  # Added early warning threshold
-        # Load the pre-trained face detector
+        # Load the pre-trained face detector - use both default and alt for better detection
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.face_alt_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
         
-        # Load the pre-trained eye detector
+        # Load multiple eye detectors for better detection with glasses
         self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        self.eye_tree_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
         
         # Variables for tracking attention
         self.looking_away = False
@@ -26,6 +28,10 @@ class FaceMonitor:
         self.warning_threshold = warning_threshold  # seconds
         self.early_warning_threshold = early_warning_threshold  # seconds
         self.should_continue = True
+        
+        # Multi-face detection variables
+        self.face_count = 0
+        self.multi_face_detected = False
     
     async def process_frame(self, websocket):
         # Initialize webcam
@@ -50,26 +56,48 @@ class FaceMonitor:
             
             # Convert to grayscale for detection
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+              # Detect faces using multiple classifiers for improved accuracy
+            faces1 = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+            faces2 = self.face_alt_cascade.detectMultiScale(gray, 1.3, 5)
             
-            # Detect faces
-            faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+            # Combine face detections from both classifiers
+            faces = list(faces1) + list(faces2)
             
-            # Check if any face is detected and looking at screen
-            current_looking_away = True
-            
-            for (x, y, w, h) in faces:
-                # No rectangle drawing on the face
+            # Remove duplicate detections (if a face is detected by both classifiers)
+            if len(faces) > 0:
+                # Convert faces to a NumPy array if it's not already
+                faces = np.array(faces)
                 
-                # Extract the face region of interest
-                roi_gray = gray[y:y+h, x:x+w]
+                # Track number of faces detected
+                self.face_count = len(faces)
+                self.multi_face_detected = self.face_count > 1
                 
-                # Detect eyes in the face
-                eyes = self.eye_cascade.detectMultiScale(roi_gray)
+                # Check if any face is detected and looking at screen
+                current_looking_away = True
                 
-                # If at least two eyes are detected, consider the person is looking at the screen
-                if len(eyes) >= 2:
-                    # No rectangle drawing on eyes
-                    current_looking_away = False
+                for (x, y, w, h) in faces:
+                    # Extract the face region of interest
+                    roi_gray = gray[y:y+h, x:x+w]
+                    
+                    # Try both eye detectors for better detection with glasses
+                    # Regular eye detector
+                    eyes = self.eye_cascade.detectMultiScale(roi_gray)
+                    # Eye detector optimized for glasses
+                    eyes_with_glasses = self.eye_tree_cascade.detectMultiScale(roi_gray)
+                    
+                    # Combine eye detections
+                    all_eyes = list(eyes) + list(eyes_with_glasses)
+                    
+                    # If at least one eye is detected, consider the person is looking at the screen
+                    # This is more permissive than before to handle glasses and different angles
+                    if len(all_eyes) >= 1:
+                        current_looking_away = False
+                        break  # If any face is looking at the screen, consider attention detected
+            else:
+                # No faces detected
+                self.face_count = 0
+                self.multi_face_detected = False
+                current_looking_away = True
             
             # If no faces detected or not enough eyes visible, consider looking away
             if current_looking_away:
@@ -104,14 +132,15 @@ class FaceMonitor:
             # Convert frame to JPEG for sending via websocket
             _, buffer = cv2.imencode('.jpg', display_frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-            
-            # Send status update with image and looking_away duration
+              # Send status update with image and looking_away duration
             message = {
                 'looking_away': self.looking_away,
                 'away_duration': self.away_duration,
                 'image': jpg_as_text,
                 'early_warning': self.away_duration >= self.early_warning_threshold,
-                'auto_submit': self.away_duration >= self.warning_threshold
+                'auto_submit': self.away_duration >= self.warning_threshold,
+                'face_count': self.face_count,
+                'multi_face': self.multi_face_detected
             }
             
             try:
@@ -134,7 +163,7 @@ class FaceMonitor:
 async def handler(websocket):
     # Path parameter is no longer needed in newer websockets versions
     print(f"Client connected")
-    monitor = FaceMonitor(warning_threshold=8)  # Changed from 10 to 8
+    monitor = FaceMonitor(warning_threshold=8, early_warning_threshold=3)  # Lowered early warning for better responsiveness
     try:
         await monitor.process_frame(websocket)
     except Exception as e:

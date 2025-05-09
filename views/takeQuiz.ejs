@@ -277,6 +277,9 @@
         let lookingAwayStartTime = null;
         let lookingAway = false;
         let faceMonitoringWarningSent = false;
+        let multiFaceDetected = false;
+        let multiFaceStartTime = null;
+        let multiFaceWarningSent = false;
         
         // Start everything when page loads
         document.addEventListener('DOMContentLoaded', () => {
