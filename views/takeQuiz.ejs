@@ -536,19 +536,27 @@
         warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
         warningSubmitting.style.fontSize = '20px';
         warningSubmitting.style.marginBottom = '30px';
+          const redirectMessage = document.createElement('p');
+        redirectMessage.textContent = 'Redirecting to dashboard...';
+        redirectMessage.style.fontSize = '16px';
+        redirectMessage.style.marginBottom = '10px';
         
         // Add elements to warning
         violationWarning.appendChild(warningIcon);
         violationWarning.appendChild(warningTitle);
         violationWarning.appendChild(warningMessage);
         violationWarning.appendChild(warningSubmitting);
+        violationWarning.appendChild(redirectMessage);
+        redirectMessage.style.marginBottom = '10px';
         
-        // Add to document
+        // Add elements to warning
         document.body.appendChild(violationWarning);
         
-        // Submit quiz after a short delay to allow warning to be seen
-        setTimeout(() => {
-            submitQuiz(true);
+        // Submit quiz and then redirect directly
+        setTimeout(async () => {
+            await submitQuizSilently(true);
+            // Redirect directly without showing any further popups
+            window.location.href = '/studentDashboard';
         }, 3000);
     }
 
@@ -596,13 +604,21 @@
         violationWarning.appendChild(warningTitle);
         violationWarning.appendChild(warningMessage);
         violationWarning.appendChild(warningSubmitting);
+          // Create redirect message
+        const redirectMessage = document.createElement('p');
+        redirectMessage.textContent = 'Redirecting to dashboard...';
+        redirectMessage.style.fontSize = '16px';
+        redirectMessage.style.marginBottom = '10px';
         
-        // Add to body
+        // Add elements to warning
+        violationWarning.appendChild(redirectMessage);
         document.body.appendChild(violationWarning);
         
         // Auto-submit after showing the warning for 3 seconds
-        setTimeout(() => {
-            submitQuiz(true);
+        setTimeout(async () => {
+            await submitQuizSilently(true);
+            // Redirect directly without showing any further popups
+            window.location.href = '/studentDashboard';
         }, 3000);
     }
 
@@ -733,11 +749,43 @@
                 
                 // Increment exit count and check if auto-submit needed
                 exitCount++;
-                
-                if (exitCount >= 3) {
-                    setTimeout(() => {
-                        alert("You've left the quiz window multiple times. Your quiz will now be submitted.");
-                        submitQuiz(true);
+                  if (exitCount >= 3) {
+                    setTimeout(async () => {
+                        // Create violation warning for multiple tab switching attempts
+                        const violationWarning = document.createElement('div');
+                        violationWarning.id = 'tab-violation-warning';
+                        violationWarning.style.position = 'fixed';
+                        violationWarning.style.top = '0';
+                        violationWarning.style.left = '0';
+                        violationWarning.style.width = '100%';
+                        violationWarning.style.height = '100%';
+                        violationWarning.style.backgroundColor = 'rgba(220, 0, 0, 0.95)';
+                        violationWarning.style.color = 'white';
+                        violationWarning.style.display = 'flex';
+                        violationWarning.style.flexDirection = 'column';
+                        violationWarning.style.justifyContent = 'center';
+                        violationWarning.style.alignItems = 'center';
+                        violationWarning.style.zIndex = '3000';
+                        violationWarning.style.textAlign = 'center';
+                        violationWarning.style.padding = '20px';
+                        
+                        // Warning content
+                        violationWarning.innerHTML = `
+                            <i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>
+                            <h1 style="font-size: 36px; margin-bottom: 20px;">EXAM VIOLATION DETECTED</h1>
+                            <p style="font-size: 24px; margin-bottom: 20px;">You've left the quiz window multiple times.</p>
+                            <p style="font-size: 20px; margin-bottom: 30px;">Your exam is being submitted and this attempt will be recorded as a security violation.</p>
+                            <p style="font-size: 16px; margin-bottom: 10px;">Redirecting to dashboard...</p>
+                        `;
+                        
+                        document.body.appendChild(violationWarning);
+                        
+                        await submitQuizSilently(true);
+                        
+                        // Redirect directly to dashboard
+                        setTimeout(() => {
+                            window.location.href = '/studentDashboard';
+                        }, 2000);
                     }, 100);
                 } else {
                     // Just record the security issue for now
@@ -886,20 +934,24 @@
                     const error = await response.json();
                     throw new Error(error.message || 'Failed to submit quiz');
                 }
+                  const result = await response.json();
                 
-                const result = await response.json();                // Show submission success message - customize based on whether it was due to a security violation
+                // Check if there are any violation warnings displayed
                 const fullscreenViolation = document.getElementById('fullscreen-violation-warning') !== null;
                 const lookingAwayViolation = document.getElementById('looking-away-violation-warning') !== null;
+                const multipleFacesViolation = document.getElementById('multiple-faces-violation-warning') !== null;
                 
-                if (fullscreenViolation || lookingAwayViolation) {
+                if (fullscreenViolation || lookingAwayViolation || multipleFacesViolation) {
                     // For violations, don't show alert as we already have a visible warning
+                    // Don't redirect - the violation handlers will handle redirection
                     console.log("Quiz auto-submitted due to security violation");
                 } else {
+                    // Only show alert if this is a normal submission without violations
                     alert(`Quiz submitted! ${isAutoSubmit ? '(Auto-submitted due to time limit or security policy)' : ''}\n\nYour score: ${result.score}/${result.total}`);
+                    
+                    // Redirect back to dashboard only for non-violation submissions
+                    window.location.href = '/studentDashboard';
                 }
-                
-                // Redirect back to dashboard
-                window.location.href = '/studentDashboard';
                 
             } catch (error) {
                 console.error("Error submitting quiz:", error);
@@ -974,8 +1026,7 @@
                     console.log('Face monitoring WebSocket closed');
                     faceMonitoringActive = false;
                 };
-                
-                websocket.onmessage = function(event) {
+                  websocket.onmessage = function(event) {
                     try {
                         const data = JSON.parse(event.data);
                         
@@ -990,47 +1041,91 @@
                             videoFeedContainer.appendChild(videoFeed);
                         }
                         
-                        // Track looking away status
-                        if ((data.looking_away && data.early_warning) && !lookingAway) {
-                            // Just started looking away beyond the early warning threshold (4 seconds)
-                            lookingAway = true;
-                            lookingAwayStartTime = Date.now();
-                            showFaceMonitoringWarning();
-                        } else if ((data.looking_away && data.early_warning) && lookingAway) {
-                            // Still looking away, update timer
-                            updateFaceMonitoringWarning(data.away_duration);
-                        } else if (!data.looking_away && lookingAway) {
-                            // Just returned to looking at screen
-                            lookingAway = false;
+                        // Check for multiple faces first
+                        if (data.multi_face && !multiFaceDetected) {
+                            // Just detected multiple faces
+                            multiFaceDetected = true;
+                            multiFaceStartTime = Date.now();
+                            showFaceMonitoringWarning('multiple-faces');
+                        } else if (data.multi_face && multiFaceDetected) {
+                            // Still detecting multiple faces, update timer
+                            const multiFaceDuration = (Date.now() - multiFaceStartTime) / 1000;
+                            updateFaceMonitoringWarning('multiple-faces', multiFaceDuration);
                             
-                            // If they were looking away for more than 5 seconds, record it
-                            const lookingAwayDuration = (Date.now() - lookingAwayStartTime) / 1000;
-                            if (lookingAwayDuration > 5) {
-                                recordSecurityIssue('looking-away', lookingAwayDuration);
+                            // If multiple faces detected for too long (8 seconds), trigger violation
+                            if (multiFaceDuration >= 8 && !multiFaceWarningSent) {
+                                multiFaceWarningSent = true;
+                                recordSecurityIssue('multiple-faces-warning', multiFaceDuration);
+                                showMultipleFacesViolationWarning();
+                                return; // Stop further processing
+                            }
+                        } else if (!data.multi_face && multiFaceDetected) {
+                            // Multiple faces no longer detected
+                            multiFaceDetected = false;
+                            
+                            // If multiple faces were detected for more than 5 seconds, record it
+                            const multiFaceDuration = (Date.now() - multiFaceStartTime) / 1000;
+                            if (multiFaceDuration > 5) {
+                                recordSecurityIssue('multiple-faces', multiFaceDuration);
                             }
                             
-                            // Hide warning popup
-                            const warningElement = document.getElementById('face-monitoring-warning');
-                            if (warningElement) {
-                                warningElement.style.display = 'none';
+                            // Hide warning popup if no other warnings are active
+                            if (!lookingAway) {
+                                const warningElement = document.getElementById('face-monitoring-warning');
+                                if (warningElement) {
+                                    warningElement.style.display = 'none';
+                                }
                             }
                             
                             // Reset warning flag
-                            faceMonitoringWarningSent = false;
-                        }
-                          // If looking away for too long, send warning record just once
-                        if (lookingAway && data.away_duration >= 8 && !faceMonitoringWarningSent) {
-                            faceMonitoringWarningSent = true;
-                            recordSecurityIssue('face-monitoring-warning', data.away_duration);
-                            
-                            // Show the full-screen looking away violation warning instead of just an alert
-                            showLookingAwayViolationWarning();
-                            return; // Stop further processing since we're handling the violation
+                            multiFaceWarningSent = false;
                         }
                         
-                        // If auto_submit flag is set to true by the server, auto-submit the quiz
-                        // This is kept as a fallback but won't normally be reached due to the code above
-                        if (data.auto_submit && quizActive) {
+                        // Then check looking away status (only if not handling multiple faces)
+                        if (!multiFaceWarningSent) {
+                            if ((data.looking_away && data.early_warning) && !lookingAway) {
+                                // Just started looking away beyond the early warning threshold
+                                lookingAway = true;
+                                lookingAwayStartTime = Date.now();
+                                showFaceMonitoringWarning('looking-away');
+                            } else if ((data.looking_away && data.early_warning) && lookingAway) {
+                                // Still looking away, update timer
+                                updateFaceMonitoringWarning('looking-away', data.away_duration);
+                            } else if (!data.looking_away && lookingAway) {
+                                // Just returned to looking at screen
+                                lookingAway = false;
+                                
+                                // If they were looking away for more than 5 seconds, record it
+                                const lookingAwayDuration = (Date.now() - lookingAwayStartTime) / 1000;
+                                if (lookingAwayDuration > 5) {
+                                    recordSecurityIssue('looking-away', lookingAwayDuration);
+                                }
+                                
+                                // Hide warning popup if no other warnings are active
+                                if (!multiFaceDetected) {
+                                    const warningElement = document.getElementById('face-monitoring-warning');
+                                    if (warningElement) {
+                                        warningElement.style.display = 'none';
+                                    }
+                                }
+                                
+                                // Reset warning flag
+                                faceMonitoringWarningSent = false;
+                            }
+                              
+                            // If looking away for too long, send warning record just once
+                            if (lookingAway && data.away_duration >= 8 && !faceMonitoringWarningSent) {
+                                faceMonitoringWarningSent = true;
+                                recordSecurityIssue('face-monitoring-warning', data.away_duration);
+                                
+                                // Show the full-screen looking away violation warning
+                                showLookingAwayViolationWarning();
+                                return; // Stop further processing since we're handling the violation
+                            }
+                        }
+                        
+                        // Auto-submit triggered by server (fallback)
+                        if (data.auto_submit && quizActive && !faceMonitoringWarningSent && !multiFaceWarningSent) {
                             showLookingAwayViolationWarning(); // Show the warning first
                         }
                     } catch (err) {
@@ -1042,10 +1137,8 @@
                 console.error('Failed to start face monitoring:', error);
                 // Continue with quiz even if face monitoring fails
             }
-        }
-
-        // Function to show face monitoring warning
-        function showFaceMonitoringWarning() {
+        }        // Function to show face monitoring warning
+        function showFaceMonitoringWarning(warningType = 'looking-away') {
             // Create warning element if it doesn't exist
             let warningElement = document.getElementById('face-monitoring-warning');
             if (!warningElement) {
@@ -1063,12 +1156,24 @@
                 warningElement.style.fontWeight = 'bold';
                 warningElement.style.textAlign = 'center';
                 warningElement.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
-                warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                
+                // Set appropriate warning based on type
+                if (warningType === 'looking-away') {
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                } else if (warningType === 'multiple-faces') {
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
+                }
                 
                 document.body.appendChild(warningElement);
             } else {
-                // If it already exists, make sure it's visible
+                // If it already exists, make sure it's visible and update the message if needed
                 warningElement.style.display = 'block';
+                
+                if (warningType === 'looking-away') {
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                } else if (warningType === 'multiple-faces') {
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
+                }
             }
         }
 
@@ -1100,10 +1205,8 @@
             } catch (error) {
                 console.error("Failed to stop face monitoring:", error);
             }
-        }
-
-        // Function to update face monitoring warning with current time
-        function updateFaceMonitoringWarning(duration) {
+        }        // Function to update face monitoring warning with current time
+        function updateFaceMonitoringWarning(warningType = 'looking-away', duration) {
             const awayTimer = document.getElementById('away-timer');
             if (awayTimer) {
                 // Round to 1 decimal place
@@ -1114,8 +1217,15 @@
                 const warningElement = document.getElementById('face-monitoring-warning');
                 if (warningElement) {
                     // Make warning more urgent as time increases
-                    if (duration >= 7) {                        warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
-                        warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>VIOLATION AT 8 SECONDS - PLEASE LOOK AT THE SCREEN NOW!';
+                    if (duration >= 7) {
+                        warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+                        
+                        // Show appropriate urgent warning based on type
+                        if (warningType === 'looking-away') {
+                            warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>VIOLATION AT 8 SECONDS - PLEASE LOOK AT THE SCREEN NOW!';
+                        } else if (warningType === 'multiple-faces') {
+                            warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>VIOLATION AT 8 SECONDS - ONLY ONE PERSON SHOULD BE VISIBLE!';
+                        }
                     } else if (duration >= 6) {
                         warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.85)';
                     }
@@ -1234,10 +1344,42 @@
                 
                 // Increment exit count and check if auto-submit needed
                 exitCount++;
-                if (exitCount >= 3) {
-                    setTimeout(() => {
-                        alert("You've violated exam policies multiple times. Your quiz will now be submitted.");
-                        submitQuiz(true);
+                if (exitCount >= 3) {                    setTimeout(async () => {
+                        // Create violation warning for multiple DevTools attempts
+                        const violationWarning = document.createElement('div');
+                        violationWarning.id = 'devtools-violation-warning';
+                        violationWarning.style.position = 'fixed';
+                        violationWarning.style.top = '0';
+                        violationWarning.style.left = '0';
+                        violationWarning.style.width = '100%';
+                        violationWarning.style.height = '100%';
+                        violationWarning.style.backgroundColor = 'rgba(220, 0, 0, 0.95)';
+                        violationWarning.style.color = 'white';
+                        violationWarning.style.display = 'flex';
+                        violationWarning.style.flexDirection = 'column';
+                        violationWarning.style.justifyContent = 'center';
+                        violationWarning.style.alignItems = 'center';
+                        violationWarning.style.zIndex = '3000';
+                        violationWarning.style.textAlign = 'center';
+                        violationWarning.style.padding = '20px';
+                        
+                        // Warning content
+                        violationWarning.innerHTML = `
+                            <i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>
+                            <h1 style="font-size: 36px; margin-bottom: 20px;">EXAM VIOLATION DETECTED</h1>
+                            <p style="font-size: 24px; margin-bottom: 20px;">You've violated exam policies multiple times.</p>
+                            <p style="font-size: 20px; margin-bottom: 30px;">Your exam is being submitted and this attempt will be recorded as a security violation.</p>
+                            <p style="font-size: 16px; margin-bottom: 10px;">Redirecting to dashboard...</p>
+                        `;
+                        
+                        document.body.appendChild(violationWarning);
+                        
+                        await submitQuizSilently(true);
+                        
+                        // Redirect directly to dashboard
+                        setTimeout(() => {
+                            window.location.href = '/studentDashboard';
+                        }, 2000);
                     }, 100);
                 }
             }
@@ -1299,6 +1441,137 @@
     function handleDevToolsChange(e) {
         if (quizActive && e.detail.isOpen) {
             // Already being handled in setupDevToolsDetection
+        }
+    }
+
+    // Function to show multiple faces violation warning and auto-submit quiz
+    function showMultipleFacesViolationWarning() {
+        // Create violation warning element
+        const violationWarning = document.createElement('div');
+        violationWarning.id = 'multiple-faces-violation-warning';
+        violationWarning.style.position = 'fixed';
+        violationWarning.style.top = '0';
+        violationWarning.style.left = '0';
+        violationWarning.style.width = '100%';
+        violationWarning.style.height = '100%';
+        violationWarning.style.backgroundColor = 'rgba(220, 0, 0, 0.95)';
+        violationWarning.style.color = 'white';
+        violationWarning.style.display = 'flex';
+        violationWarning.style.flexDirection = 'column';
+        violationWarning.style.justifyContent = 'center';
+        violationWarning.style.alignItems = 'center';
+        violationWarning.style.zIndex = '3000';
+        violationWarning.style.textAlign = 'center';
+        violationWarning.style.padding = '20px';
+        
+        // Create warning content
+        const warningIcon = document.createElement('div');
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>';
+        
+        const warningTitle = document.createElement('h1');
+        warningTitle.textContent = 'EXAM VIOLATION DETECTED';
+        warningTitle.style.fontSize = '36px';
+        warningTitle.style.marginBottom = '20px';
+        
+        const warningMessage = document.createElement('p');
+        warningMessage.textContent = 'Multiple faces have been detected. This is a violation of exam rules.';
+        warningMessage.style.fontSize = '24px';
+        warningMessage.style.marginBottom = '20px';
+        
+        const warningSubmitting = document.createElement('p');
+        warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
+        warningSubmitting.style.fontSize = '20px';
+        warningSubmitting.style.marginBottom = '30px';
+        
+        // Create redirect message
+        const redirectMessage = document.createElement('p');
+        redirectMessage.textContent = 'Redirecting to dashboard...';
+        redirectMessage.style.fontSize = '16px';
+        redirectMessage.style.marginBottom = '10px';
+        
+        // Add elements to warning
+        violationWarning.appendChild(warningIcon);
+        violationWarning.appendChild(warningTitle);
+        violationWarning.appendChild(warningMessage);
+        violationWarning.appendChild(warningSubmitting);
+        violationWarning.appendChild(redirectMessage);
+        document.body.appendChild(violationWarning);
+        
+        // Auto-submit after showing the warning for 3 seconds
+        setTimeout(async () => {
+            await submitQuizSilently(true);
+            // Redirect directly without showing any further popups
+            window.location.href = '/studentDashboard';
+        }, 3000);
+    }
+
+    // Function to submit quiz silently without showing alerts (for violation cases)
+    async function submitQuizSilently(isAutoSubmit = true) {
+        // Prevent multiple submissions
+        if (!quizActive && !isAutoSubmit) return;
+        quizActive = false;
+        
+        // Stop face monitoring
+        await stopFaceMonitoring();
+        
+        // Exit fullscreen mode when submitting (if not already)
+        if (document.fullscreenElement) {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.error(err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+        
+        // Clean up timers, event listeners and UI elements
+        cleanupQuizResources();
+        
+        const quizForm = document.getElementById('quiz-form');
+        const quizId = quizForm.dataset.quizId;
+        
+        try {
+            // Collect answers
+            const formData = new FormData(quizForm);
+            const answers = [];
+            
+            // Process form data into the format expected by the server
+            for (const [name, value] of formData.entries()) {
+                if (name.startsWith('question-')) {
+                    const questionId = name.split('-')[1];
+                    answers.push({
+                        questionId: questionId,
+                        optionId: value
+                    });
+                }
+            }
+            
+            // Send submission to server
+            const response = await fetch(`/api/quiz/${quizId}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    answers: answers,
+                    autoSubmitted: isAutoSubmit
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                console.error("Error submitting quiz:", error.message || 'Failed to submit quiz');
+            }
+            
+            // Silently get the results without showing any alerts
+            await response.json();
+            
+            return true;  // Success
+            
+        } catch (error) {
+            console.error("Error submitting quiz silently:", error);
+            return false;  // Failure
         }
     }
     </script>
