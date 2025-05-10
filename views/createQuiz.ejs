@@ -118,6 +118,23 @@
             font-weight: 500;
             color: var(--text-color);
         }
+          .uniform-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: white;
+        }
+        
+        .uniform-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
         
         .form-group input, 
         .form-group select, 
@@ -130,9 +147,9 @@
             font-family: inherit;
             font-size: 16px;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: white;
         }
-        
-        .form-group input:focus,
+          .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
@@ -181,31 +198,42 @@
             font-weight: 600;
             font-size: 15px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-        
-        .remove-question {
+        }        .remove-question {
             position: absolute;
             top: 10px;
             right: 10px;
             background: none;
-            border: none;
+            border: 1px solid transparent;
             color: var(--danger-color);
             cursor: pointer;
-            font-size: 18px;
-            width: 34px;
-            height: 34px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
         }
         
         .remove-question:hover {
-            background-color: #ffeeee;
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+            box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3);
+        }        .remove-question i {
+            display: block;
+            width: 16px;
+            height: 16px;
+            font-size: 16px;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+            margin: 0;
         }
-        
-        .option-group {
+          .option-group {
             display: flex;
             align-items: center;
             margin-bottom: 14px;
@@ -213,16 +241,15 @@
             border-radius: 8px;
             padding: 10px 15px;
             transition: background-color 0.3s ease;
+            position: relative;
         }
         
         .option-group:hover {
             background-color: #eef1ff;
-        }
-        
-        .option-group input[type="text"] {
+        }.option-group input[type="text"] {
             flex: 1;
             margin-right: 12px;
-            border-radius: 6px;
+            background-color: white;
         }
         
         .option-group .radio-label {
@@ -239,11 +266,11 @@
         .option-group .radio-label:hover {
             background-color: #f0f4ff;
         }
-        
-        .option-group .radio-label input {
+          .option-group .radio-label input {
             margin-right: 8px;
             width: auto;
             cursor: pointer;
+            accent-color: var(--primary-color);
         }
         
         .options-container {
@@ -274,9 +301,13 @@
             align-items: center;
             justify-content: center;
         }
-        
-        button i {
+          button i {
             margin-right: 8px;
+        }
+        
+        /* Exception for remove-option button */
+        .remove-option i {
+            margin-right: 0;
         }
         
         .btn-primary {
@@ -311,8 +342,7 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
-        .btn-danger {
+          .btn-danger {
             background-color: var(--danger-color);
             color: white;
             padding: 6px 10px;
@@ -326,6 +356,29 @@
         .btn-small {
             font-size: 14px;
             padding: 8px 14px;
+        }
+          .remove-option {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            line-height: 1 !important;
+            border-radius: 50% !important;
+        }
+        
+        .remove-option i {
+            margin: 0 !important;
+            font-size: 16px;
+            position: relative;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
         }
         
         #add-question-btn {
@@ -346,8 +399,131 @@
         .date-time-flex .form-group {
             flex: 1;
         }
+          /* Responsive adjustments */        /* Success Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
         
-        /* Responsive adjustments */
+        .popup-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .popup-container {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.4s, opacity 0.4s;
+        }
+        
+        .popup-overlay.show .popup-container {
+            transform: translateY(0);
+            opacity: 1;
+        }        .success-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #f0f9f4;
+            border: 5px solid var(--success-color);
+            margin: 0 auto 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .success-tick {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            animation: circle-fill 0.5s ease-in-out forwards;
+        }
+        
+        /* Use Font Awesome checkmark for consistency */
+        .success-tick:after {
+            content: '\f00c';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 50px;
+            color: var(--success-color);
+            opacity: 0;
+            animation: fade-in 0.5s ease-in-out forwards 0.3s;
+        }
+        
+        @keyframes circle-fill {
+            0% { 
+                transform: scale(0); 
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% { 
+                transform: scale(1); 
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fade-in {
+            0% { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        .popup-title {
+            font-size: 24px;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+          .popup-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 40px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .popup-btn:hover {
+            background-color: var(--success-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
         @media (max-width: 768px) {
             .quiz-form {
                 padding: 25px;
@@ -356,6 +532,7 @@
             .option-group {
                 flex-direction: column;
                 align-items: flex-start;
+                padding-right: 50px; /* Make space for the delete button */
             }
             
             .option-group input[type="text"] {
@@ -366,6 +543,13 @@
             
             .option-group .radio-label {
                 margin-bottom: 10px;
+            }
+            
+            .remove-option {
+                position: absolute !important;
+                right: 10px !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
             }
             
             .action-buttons {
@@ -380,6 +564,16 @@
             .date-time-flex {
                 flex-direction: column;
                 gap: 10px;
+            }
+            
+            .popup-container {
+                padding: 30px 20px;
+            }
+            
+            .success-circle {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 20px;
             }
         }
     </style>
@@ -403,34 +597,31 @@
             </div>
             
             <div class="form-section">
-                <h3>Quiz Details</h3>
-                <div class="form-group">
+                <h3>Quiz Details</h3>                <div class="form-group">
                     <label for="title">Quiz Title</label>
-                    <input type="text" id="title" name="title" required placeholder="Enter quiz title">
+                    <input type="text" id="title" name="title" class="uniform-input" required placeholder="Enter quiz title">
                 </div>
                 
                 <div class="form-group">
                     <label for="description">Description (Optional)</label>
-                    <textarea id="description" name="description" placeholder="Enter a brief description of the quiz"></textarea>
+                    <textarea id="description" name="description" class="uniform-input" placeholder="Enter a brief description of the quiz"></textarea>
                 </div>
                 
-                <div class="date-time-flex">
-                    <div class="form-group">
-                        <label for="scheduledDate">Schedule Quiz For</label>
-                        <input type="datetime-local" id="scheduledDate" name="scheduledDate">
-                        <div class="help-text">When the quiz becomes available to students</div>
+                <div class="date-time-flex">                    <div class="form-group">
+                        <label for="scheduledDate">Start Date and Time</label>
+                        <input type="datetime-local" id="scheduledDate" name="scheduledDate" class="uniform-input">
+                        <div class="help-text">When the quiz becomes available to students (defaults to now if blank)</div>
                     </div>
                     
                     <div class="form-group">
-                        <label for="deadlineDate">Deadline</label>
-                        <input type="datetime-local" id="deadlineDate" name="deadlineDate">
-                        <div class="help-text">Last date/time students can access this quiz</div>
+                        <label for="deadlineDate">End Date and Time</label>
+                        <input type="datetime-local" id="deadlineDate" name="deadlineDate" class="uniform-input">
+                        <div class="help-text">Optional: When access to this quiz expires (leave blank for no deadline)</div>
                     </div>
                 </div>
-                
-                <div class="form-group">
+                  <div class="form-group">
                     <label for="duration">Duration (minutes)</label>
-                    <input type="number" id="duration" name="duration" min="1" value="30" required>
+                    <input type="number" id="duration" name="duration" min="1" value="30" required class="uniform-input">
                 </div>
             </div>
             
@@ -503,12 +694,11 @@
                     alert('Please fill out all required fields and ensure each question has at least one correct answer.');
                     return;
                 }
-                
-                // Construct quiz data
+                  // Construct quiz data
                 const quizData = {
                     title: document.getElementById('title').value,
                     description: document.getElementById('description').value,
-                    scheduledDate: document.getElementById('scheduledDate').value || null,
+                    scheduledDate: document.getElementById('scheduledDate').value || new Date().toISOString(),
                     deadlineDate: document.getElementById('deadlineDate').value || null,
                     duration: parseInt(document.getElementById('duration').value, 10),
                     questions: []
@@ -546,12 +736,11 @@
                         },
                         body: JSON.stringify(quizData)
                     });
-                    
-                    const result = await response.json();
+                      const result = await response.json();
                     
                     if (response.ok) {
-                        alert('Quiz created successfully!');
-                        window.location.href = '/coordinatorDashboard';
+                        // Show success popup instead of alert
+                        showSuccessPopup();
                     } else {
                         alert('Error: ' + result.message);
                     }
@@ -572,10 +761,9 @@
                     <button type="button" class="remove-question">
                         <i class="fas fa-times"></i>
                     </button>
-                    
-                    <div class="form-group">
+                      <div class="form-group">
                         <label>Question Text</label>
-                        <input type="text" class="question-text" required placeholder="Enter your question here">
+                        <input type="text" class="question-text uniform-input" required placeholder="Enter your question here">
                     </div>
                     
                     <div class="options-container">
@@ -615,14 +803,11 @@
             // Function to add a new option
             function addOption(container, questionId) {
                 const optionGroup = document.createElement('div');
-                optionGroup.className = 'option-group';
-                optionGroup.innerHTML = `
-                    <input type="text" class="option-text" required placeholder="Enter an answer option">
+                optionGroup.className = 'option-group';                optionGroup.innerHTML = `                    <input type="text" class="option-text uniform-input" required placeholder="Enter an answer option">
                     <label class="radio-label">
                         <input type="radio" name="correct-${questionId}" class="option-correct">
                         Correct
-                    </label>
-                    <button type="button" class="remove-option btn-small btn-danger">
+                    </label>                    <button type="button" class="remove-option btn-danger">
                         <i class="fas fa-trash"></i>
                     </button>
                 `;
@@ -680,8 +865,45 @@
                 
                 return true;
             }
-        });
+        });    </script>    <!-- Success Popup -->
+    <div class="popup-overlay" id="successPopup">
+        <div class="popup-container">
+            <div class="success-circle">
+                <div class="success-tick"></div>
+            </div>
+            <h3 class="popup-title">Quiz Created</h3>
+            <button class="popup-btn" id="popupOkBtn">OK</button>
+        </div>
+    </div><script>
+        // Function to show the success popup
+        function showSuccessPopup() {
+            const popup = document.getElementById('successPopup');
+            const successCircle = document.querySelector('.success-circle');
+            
+            // Reset animation by recreating the tick element
+            const newTick = document.createElement('div');
+            newTick.className = 'success-tick';
+            successCircle.innerHTML = '';
+            successCircle.appendChild(newTick);
+            
+            // Show the popup with a slight delay to ensure animation plays
+            setTimeout(() => {
+                popup.classList.add('show');
+            }, 10);
+            
+            // Set up OK button event (remove any existing listeners first)
+            const okButton = document.getElementById('popupOkBtn');
+            const newOkButton = okButton.cloneNode(true);
+            okButton.parentNode.replaceChild(newOkButton, okButton);
+            
+            newOkButton.addEventListener('click', function() {
+                popup.classList.remove('show');
+                // Redirect after animation completes
+                setTimeout(() => {
+                    window.location.href = '/coordinatorDashboard';
+                }, 300);
+            });
+        }
     </script>
-
 </body>
 </html>
