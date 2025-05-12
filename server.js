@@ -1567,6 +1567,89 @@ app.delete('/api/quizzes/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+// API endpoint to get quiz results for coordinators
+app.get('/api/quizzes/:id/results', isAuthenticated, async (req, res) => {
+    const quizId = req.params.id;
+    const connection = await pool.getConnection();
+    
+    try {
+        // Debug logs to help identify issues
+        console.log(`Fetching results for quiz ${quizId}`);
+        console.log(`User ID: ${req.session.user.id}`);
+        console.log(`User role: ${req.session.user.role}`);
+        
+        // Verify the quiz belongs to this coordinator
+        const [quizCheck] = await connection.execute(
+            'SELECT * FROM quizzes WHERE id = ? AND created_by = ?',
+            [quizId, req.session.user.id]
+        );
+        
+        console.log(`Quiz check results: ${quizCheck.length} records found`);
+        
+        // Get quiz details
+        const [quizDetails] = await connection.execute(
+            'SELECT title, description FROM quizzes WHERE id = ?',
+            [quizId]
+        );
+        
+        if (quizDetails.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Quiz not found' 
+            });
+        }
+        
+        // Get all quiz attempts for this quiz
+        const [attempts] = await connection.execute(
+            `SELECT qa.id, qa.student_username, s.first_name, s.last_name, 
+            qa.score, qa.total_questions, qa.completed_date, qa.auto_submitted
+            FROM quiz_attempts qa
+            JOIN students s ON qa.student_username = s.username
+            WHERE qa.quiz_id = ?
+            ORDER BY qa.completed_date DESC`,
+            [quizId]
+        );
+        
+        // Calculate statistics
+        let totalAttempts = attempts.length;
+        let averageScore = 0;
+        let highestScore = 0;
+        
+        if (totalAttempts > 0) {
+            averageScore = attempts.reduce((sum, attempt) => sum + (attempt.score / attempt.total_questions * 100), 0) / totalAttempts;
+            highestScore = Math.max(...attempts.map(attempt => (attempt.score / attempt.total_questions * 100)));
+        }
+        
+        // Format attempts with percentage scores
+        const formattedAttempts = attempts.map(attempt => ({
+            ...attempt,
+            studentName: `${attempt.first_name} ${attempt.last_name}`,
+            percentScore: ((attempt.score / attempt.total_questions) * 100).toFixed(2),
+            formattedDate: new Date(attempt.completed_date).toLocaleString()
+        }));
+        
+        res.json({
+            success: true,
+            quizTitle: quizDetails[0].title,
+            quizDescription: quizDetails[0].description,
+            statistics: {
+                totalAttempts,
+                averageScore: averageScore.toFixed(2),
+                highestScore: highestScore.toFixed(2)
+            },
+            attempts: formattedAttempts
+        });
+        
+    } catch (error) {
+        console.error('Error fetching quiz results:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch quiz results' 
+        });
+    } finally {
+        connection.release();
+    }
+});
 
 // Admin Route //
 

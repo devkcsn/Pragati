@@ -200,7 +200,7 @@
         
         .quiz-actions {
             display: flex;
-            justify-content: flex-end;
+            gap: 10px;
         }
         
         .delete-btn {
@@ -291,15 +291,25 @@
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             position: relative;
+        }
+        
+        /* Results Modal Specific Styles */
+        .results-modal-content {
+            max-width: 900px;
+            width: 90%;
         }
         
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
         }
         
         .modal-header h3 {
@@ -308,70 +318,147 @@
         }
         
         .close-modal {
-            font-size: 1.5em;
+            font-size: 24px;
             cursor: pointer;
-            color: #777;
-            transition: color 0.3s ease;
+            color: #666;
+            transition: color 0.2s;
         }
         
         .close-modal:hover {
-            color: #333;
+            color: #e74c3c;
         }
         
-        .modal-body {
-            margin-bottom: 20px;
-        }
-        
-        .modal-actions {
+        .results-stats {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px 25px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            margin: 0 10px;
+            min-width: 120px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        
+        .results-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .results-table th, 
+        .results-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .results-table th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+        
+        .results-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .results-table td:nth-child(3) {
+            font-weight: 500;
+        }
+        
+        .auto-submit-tag {
+            background-color: #ffcc80;
+            color: #e65100;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .manual-submit-tag {
+            background-color: #a5d6a7;
+            color: #1b5e20;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .no-results {
+            padding: 30px;
+            text-align: center;
+            color: #6c757d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .no-results i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #adb5bd;
+        }
+        
+        .loading-row, .error-row {
+            text-align: center;
+            padding: 20px !important;
+            color: #6c757d;
+        }
+        
+        .error-row {
+            color: #dc3545;
+        }
+        
+        .error-row i {
+            margin-right: 10px;
+        }
+        
+        /* Quiz actions update */
+        .quiz-actions {
+            display: flex;
             gap: 10px;
         }
         
-        .modal-btn {
-            padding: 10px 15px;
+        .results-btn {
+            background-color: #4caf50;
+            color: white;
             border: none;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
             font-weight: 500;
-            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s;
         }
         
-        .cancel-btn {
-            background-color: #e0e0e0;
-            color: #333;
-        }
-        
-        .cancel-btn:hover {
-            background-color: #ccc;
-        }
-        
-        .confirm-btn {
-            background-color: #F44336;
-            color: white;
-        }
-        
-        .confirm-btn:hover {
-            background-color: #D32F2F;
-        }
-        
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            display: none;
-        }
-        
-        .alert-success {
-            background-color: #E8F5E9;
-            color: #388E3C;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .alert-error {
-            background-color: #FFEBEE;
-            color: #D32F2F;
-            border-left: 4px solid #F44336;
+        .results-btn:hover {
+            background-color: #388e3c;
         }
     </style>
 </head>
@@ -435,8 +522,7 @@
             <!-- Pagination will be populated here dynamically -->
         </div>
     </div>
-    
-    <!-- Delete Confirmation Modal -->
+      <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -454,6 +540,52 @@
         </div>
     </div>
     
+    <!-- Results Modal -->
+    <div id="resultsModal" class="modal">
+        <div class="modal-content results-modal-content">
+            <div class="modal-header">
+                <h3>Quiz Results: <span id="resultsQuizTitle"></span></h3>
+                <span class="close-modal" id="closeResultsModal">&times;</span>
+            </div>
+            <div class="modal-body results-body">
+                <div class="results-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalAttempts">0</div>
+                        <div class="stat-label">Attempts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="averageScore">0%</div>
+                        <div class="stat-label">Average Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="highestScore">0%</div>
+                        <div class="stat-label">Highest Score</div>
+                    </div>
+                </div>
+                <div class="results-table-container">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Date Completed</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody">
+                            <!-- Results will be populated here -->
+                        </tbody>
+                    </table>
+                    <div class="no-results" id="noResults">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No students have attempted this quiz yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Store the current page and quizzes per page
         let currentPage = 1;
@@ -461,8 +593,7 @@
         let allQuizzes = [];
         let filteredQuizzes = [];
         let deleteQuizId = null;
-        
-        // DOM elements
+          // DOM elements
         const quizContainer = document.getElementById('quizContainer');
         const emptyState = document.getElementById('emptyState');
         const pagination = document.getElementById('pagination');
@@ -470,19 +601,27 @@
         const dateFilter = document.getElementById('dateFilter');
         const searchBox = document.getElementById('searchBox');
         const deleteModal = document.getElementById('deleteModal');
+        const resultsModal = document.getElementById('resultsModal');
         const closeModalBtn = document.querySelector('.close-modal');
+        const closeResultsModalBtn = document.getElementById('closeResultsModal');
         const cancelDeleteBtn = document.getElementById('cancelDelete');
         const confirmDeleteBtn = document.getElementById('confirmDelete');
         const deleteQuizTitle = document.getElementById('deleteQuizTitle');
+        const resultsQuizTitle = document.getElementById('resultsQuizTitle');
+        const totalAttempts = document.getElementById('totalAttempts');
+        const averageScore = document.getElementById('averageScore');
+        const highestScore = document.getElementById('highestScore');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+        const noResults = document.getElementById('noResults');
         const alertMessage = document.getElementById('alertMessage');
         
         // Event listeners for filters
         statusFilter.addEventListener('change', applyFilters);
         dateFilter.addEventListener('change', applyFilters);
         searchBox.addEventListener('input', applyFilters);
-        
-        // Modal event listeners
+          // Modal event listeners
         closeModalBtn.addEventListener('click', closeModal);
+        closeResultsModalBtn.addEventListener('click', closeResultsModal);
         cancelDeleteBtn.addEventListener('click', closeModal);
         confirmDeleteBtn.addEventListener('click', deleteQuiz);
         
@@ -621,9 +760,11 @@
                 <div class="quiz-questions">
                     <i class="fas fa-question-circle"></i> ${questionCount} Questions
                 </div>
-            </div>
-            <span class="quiz-status ${statusClass}">${statusText}</span>
+            </div>            <span class="quiz-status ${statusClass}">${statusText}</span>
             <div class="quiz-actions">
+                <button class="results-btn" data-quiz-id="${quiz.id}" data-quiz-title="${quiz.title}">
+                    <i class="fas fa-chart-bar"></i> Results
+                </button>
                 <button class="delete-btn" data-quiz-id="${quiz.id}" data-quiz-title="${quiz.title}">
                     <i class="fas fa-trash"></i> Delete
                 </button>
@@ -632,13 +773,21 @@
         
         quizContainer.appendChild(quizCard);
     }
-    
-    // Add event listeners to delete buttons
+      // Add event listeners to delete buttons
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const quizId = this.getAttribute('data-quiz-id');
             const quizTitle = this.getAttribute('data-quiz-title');
             showDeleteModal(quizId, quizTitle);
+        });
+    });
+    
+    // Add event listeners to results buttons
+    document.querySelectorAll('.results-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const quizId = this.getAttribute('data-quiz-id');
+            const quizTitle = this.getAttribute('data-quiz-title');
+            fetchAndShowResults(quizId, quizTitle);
         });
     });
     
@@ -785,6 +934,77 @@
                 closeModal();
             }
         });
+
+        // Function to fetch quiz results and show the modal
+        async function fetchAndShowResults(quizId, quizTitle) {
+            try {
+                // Show loading state
+                resultsTableBody.innerHTML = '<tr><td colspan="5" class="loading-row">Loading results...</td></tr>';
+                resultsQuizTitle.textContent = quizTitle;
+                resultsModal.style.display = 'flex';
+                
+                // Fetch results from server
+                const response = await fetch(`/api/quizzes/${quizId}/results`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch quiz results');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch quiz results');
+                }
+                
+                // Update statistics
+                totalAttempts.textContent = data.statistics.totalAttempts;
+                averageScore.textContent = `${data.statistics.averageScore}%`;
+                highestScore.textContent = `${data.statistics.highestScore}%`;
+                
+                // Populate results table
+                if (data.attempts && data.attempts.length > 0) {
+                    noResults.style.display = 'none';
+                    resultsTableBody.innerHTML = '';
+                    
+                    data.attempts.forEach(attempt => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${attempt.studentName}</td>
+                            <td>${attempt.score}/${attempt.total_questions}</td>
+                            <td>${attempt.percentScore}%</td>
+                            <td>${attempt.formattedDate}</td>
+                            <td>${attempt.auto_submitted ? 
+                                '<span class="auto-submit-tag">Auto-submitted</span>' : 
+                                '<span class="manual-submit-tag">Manual</span>'}</td>
+                        `;
+                        resultsTableBody.appendChild(row);
+                    });
+                } else {
+                    noResults.style.display = 'flex';
+                    resultsTableBody.innerHTML = '';
+                }
+                
+            } catch (error) {
+                console.error('Error fetching quiz results:', error);
+                
+                // Show error message
+                resultsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="error-row">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Failed to load results: ${error.message || 'Unknown error'}
+                        </td>
+                    </tr>
+                `;
+                
+                noResults.style.display = 'none';
+            }
+        }
+        
+        // Function to close results modal
+        function closeResultsModal() {
+            resultsModal.style.display = 'none';
+        }
     </script>
 </body>
 </html>
