@@ -2,6 +2,9 @@
 
 // Initialize once DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure elements are visible first
+    ensureNavbarVisibility();
+    
     // Check if GSAP is available
     if (typeof gsap !== 'undefined') {
         initNavbarAnimations();
@@ -14,10 +17,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize scroll effects
     initScrollEffects();
+    
+    // Run visibility check again after animations
+    setTimeout(ensureNavbarVisibility, 1000);
 });
+
+// Function to ensure navbar elements are visible
+function ensureNavbarVisibility() {
+    document.querySelectorAll('.navbar-link, .navbar-username').forEach(el => {
+        el.style.opacity = '1';
+        el.style.visibility = 'visible';
+    });
+    
+    document.querySelectorAll('.navbar-link i, .navbar-username i').forEach(icon => {
+        icon.style.opacity = '1';
+        icon.style.visibility = 'visible';
+        icon.style.color = '#ffffff';
+    });
+}
 
 // GSAP-powered animations
 function initNavbarAnimations() {
+    // Set initial visibility to ensure elements are visible before animations start
+    gsap.set('.navbar-username, .navbar-link', {opacity: 1, visibility: 'visible'});
+    
     // Initial animation for navbar elements
     gsap.from('.navbar-title', {
         y: -50,
@@ -33,15 +56,19 @@ function initNavbarAnimations() {
         ease: 'power3.out'
     });
     
+    // Make sure elements remain visible after animation
     gsap.from('.navbar-username, .navbar-link', {
         y: -20,
         opacity: 0,
         stagger: 0.1,
         duration: 0.6,
-        ease: 'power2.out'
+        ease: 'power2.out',
+        onComplete: function() {
+            gsap.set('.navbar-username, .navbar-link', {clearProps: 'opacity,visibility'});
+        }
     });
     
-    // Hover effects for navbar links
+    // Hover effects for navbar links - keep them simple to avoid interfering with visibility
     const navLinks = document.querySelectorAll('.navbar-link');
     navLinks.forEach(link => {
         link.addEventListener('mouseenter', () => {
@@ -80,15 +107,37 @@ function initMobileMenu() {
         menuToggle.addEventListener('click', () => {
             mobileMenu.classList.toggle('active');
             
-            // Animate using GSAP if available
-            if (typeof gsap !== 'undefined' && mobileMenu.classList.contains('active')) {
-                gsap.from('.navbar-menu .navbar-link', {
-                    y: 20,
-                    opacity: 0,
-                    stagger: 0.1,
-                    duration: 0.4,
-                    ease: 'power2.out'
+            // If menu is active, ensure all elements are visible
+            if (mobileMenu.classList.contains('active')) {
+                // Force visibility of all menu items
+                const menuItems = mobileMenu.querySelectorAll('*');
+                menuItems.forEach(item => {
+                    item.style.visibility = 'visible';
+                    item.style.opacity = '1';
+                    
+                    // For text elements and icons, ensure they have color
+                    if (item.tagName === 'I' || item.tagName === 'SPAN' || item.tagName === 'A') {
+                        item.style.color = '#ffffff';
+                    }
                 });
+                
+                // Animate using GSAP if available
+                if (typeof gsap !== 'undefined') {
+                    gsap.from('.navbar-menu .navbar-link', {
+                        y: 20,
+                        opacity: 1, // Set to 1 to ensure visibility
+                        stagger: 0.1,
+                        duration: 0.4,
+                        ease: 'power2.out'
+                    });
+                    
+                    gsap.from('.navbar-menu .navbar-username', {
+                        y: 20,
+                        opacity: 1, // Set to 1 to ensure visibility
+                        duration: 0.4,
+                        ease: 'power2.out'
+                    });
+                }
             }
         });
     }

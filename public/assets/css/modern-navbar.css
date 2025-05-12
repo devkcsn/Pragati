@@ -9,6 +9,20 @@
   --transition-speed: 0.3s;
 }
 
+/* Fix for visibility issues with navbar elements */
+.navbar-brand *,
+.navbar-menu *,
+.navbar-link *,
+.navbar-username *,
+.navbar-toggle *,
+.navbar-logo,
+.navbar-title {
+  color: var(--navbar-text);
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block;
+}
+
 .modern-navbar {
   background: var(--navbar-bg-gradient);
   color: var(--navbar-text);
@@ -22,6 +36,13 @@
   z-index: 1000;
   backdrop-filter: blur(10px);
   transition: padding var(--transition-speed) ease;
+}
+
+/* Override any potential reset or conflicting styles */
+.modern-navbar *,
+.modern-navbar *::before,
+.modern-navbar *::after {
+  visibility: visible !important;
 }
 
 .navbar-shrink {
@@ -78,10 +99,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  color: var(--navbar-text) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .navbar-username i {
   font-size: 0.9rem;
+  color: var(--navbar-text);
+  opacity: 1;
+  visibility: visible;
 }
 
 .navbar-link {
@@ -96,6 +123,8 @@
   gap: 0.5rem;
   position: relative;
   overflow: hidden;
+  opacity: 1 !important; /* Ensure visibility */
+  visibility: visible !important; /* Ensure visibility */
 }
 
 .navbar-link::before {
@@ -123,6 +152,7 @@
 
 .navbar-link i {
   font-size: 1rem;
+  color: var(--navbar-text); /* Explicitly set icon color */
 }
 
 .navbar-link.logout-btn {
@@ -130,6 +160,15 @@
   border-radius: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--navbar-text) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.navbar-link.logout-btn i {
+  color: var(--navbar-text);
+  visibility: visible;
+  opacity: 1;
 }
 
 .navbar-link.logout-btn:hover {
@@ -160,8 +199,7 @@
   .navbar-toggle {
     display: block;
   }
-  
-  .navbar-menu {
+    .navbar-menu {
     position: fixed;
     top: -100vh;
     left: 0;
@@ -172,12 +210,23 @@
     box-shadow: var(--navbar-shadow);
     padding: 1rem;
     gap: 1rem;
-    transition: transform var(--transition-speed) ease;
+    transition: transform var(--transition-speed) ease, opacity var(--transition-speed) ease;
     z-index: 999;
+    opacity: 0; /* Start with menu hidden */
+    visibility: hidden;
   }
   
   .navbar-menu.active {
     transform: translateY(100vh);
+    opacity: 1 !important; /* Show when active */
+    visibility: visible !important;
+  }
+  
+  /* Ensure all items in mobile menu are visible when active */
+  .navbar-menu.active * {
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: var(--navbar-text) !important;
   }
   
   .navbar-username {
