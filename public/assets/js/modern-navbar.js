@@ -55,25 +55,36 @@ function initNavbarAnimations() {
         duration: 0.8,
         ease: 'power3.out'
     });
+      // First, set elements to their final position immediately
+    gsap.set('.navbar-username, .navbar-link', {
+        y: 0,
+        opacity: 1, 
+        visibility: 'visible'
+    });
     
-    // Make sure elements remain visible after animation
+    // Then animate only the opacity for a fade-in effect
     gsap.from('.navbar-username, .navbar-link', {
-        y: -20,
         opacity: 0,
         stagger: 0.1,
         duration: 0.6,
         ease: 'power2.out',
         onComplete: function() {
-            gsap.set('.navbar-username, .navbar-link', {clearProps: 'opacity,visibility'});
+            // Ensure final state is stable
+            gsap.set('.navbar-username, .navbar-link', {
+                clearProps: 'opacity,visibility',
+                opacity: 1,
+                visibility: 'visible'
+            });
         }
     });
     
-    // Hover effects for navbar links - keep them simple to avoid interfering with visibility
-    const navLinks = document.querySelectorAll('.navbar-link');
+    // Replace position-based hover effects with subtler ones
+    const navLinks = document.querySelectorAll('.navbar-link:not(.logout-btn)');
     navLinks.forEach(link => {
         link.addEventListener('mouseenter', () => {
             gsap.to(link, {
-                y: -2,
+                boxShadow: '0 2px 4px rgba(255, 255, 255, 0.1)',
+                color: 'var(--navbar-hover)',
                 duration: 0.2,
                 ease: 'power1.out'
             });
@@ -81,12 +92,35 @@ function initNavbarAnimations() {
         
         link.addEventListener('mouseleave', () => {
             gsap.to(link, {
-                y: 0,
+                boxShadow: 'none',
+                color: 'var(--navbar-text)',
                 duration: 0.2,
                 ease: 'power1.in'
             });
         });
     });
+    
+    // Special handling for logout button
+    const logoutBtn = document.querySelector('.navbar-link.logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('mouseenter', () => {
+            gsap.to(logoutBtn, {
+                backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                boxShadow: '0 3px 7px rgba(0, 0, 0, 0.15)',
+                duration: 0.2,
+                ease: 'power1.out'
+            });
+        });
+        
+        logoutBtn.addEventListener('mouseleave', () => {
+            gsap.to(logoutBtn, {
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                duration: 0.2,
+                ease: 'power1.in'
+            });
+        });
+    }
 }
 
 // Fallback basic animations without GSAP
