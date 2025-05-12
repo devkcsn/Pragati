@@ -136,13 +136,24 @@ function initBasicAnimations() {
 function initMobileMenu() {
     const menuToggle = document.querySelector('.navbar-toggle');
     const mobileMenu = document.querySelector('.navbar-menu');
+    const bodyElement = document.body;
     
     if (menuToggle && mobileMenu) {
+        // Handle clicks on menu links to close the menu
+        document.querySelectorAll('.navbar-menu .navbar-link').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                bodyElement.style.overflow = 'auto'; // Re-enable scrolling
+            });
+        });
+        
         menuToggle.addEventListener('click', () => {
             mobileMenu.classList.toggle('active');
             
-            // If menu is active, ensure all elements are visible
+            // Toggle body scroll lock
             if (mobileMenu.classList.contains('active')) {
+                bodyElement.style.overflow = 'hidden'; // Prevent background scrolling
+                
                 // Force visibility of all menu items
                 const menuItems = mobileMenu.querySelectorAll('*');
                 menuItems.forEach(item => {

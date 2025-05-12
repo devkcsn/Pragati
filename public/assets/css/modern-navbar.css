@@ -9,6 +9,14 @@
   --transition-speed: 0.3s;
 }
 
+/* Reset for HTML and body to prevent unwanted spacing */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
 /* Fix for visibility issues with navbar elements */
 .navbar-brand *,
 .navbar-menu *,
@@ -33,9 +41,14 @@
   box-shadow: var(--navbar-shadow);
   position: sticky;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
   z-index: 1000;
   backdrop-filter: blur(10px);
   transition: padding var(--transition-speed) ease;
+  margin: 0;
 }
 
 /* Override any potential reset or conflicting styles */
@@ -197,6 +210,9 @@
   color: var(--navbar-text);
   cursor: pointer;
   transition: color var(--transition-speed) ease;
+  padding: 0.5rem;
+  margin-right: -0.5rem; /* Remove any gap on the right */
+  z-index: 1001; /* Ensure it stays above the menu */
 }
 
 .navbar-toggle:hover {
@@ -206,31 +222,38 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .modern-navbar {
-    padding: 0.8rem 1rem;
+    padding: 0.8rem 1rem 0.8rem 1rem;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
   
   .navbar-toggle {
     display: block;
+    margin-right: 0;
   }
-    .navbar-menu {
+  .navbar-menu {
     position: fixed;
-    top: -100vh;
+    top: 0;
     left: 0;
-    width: 100%;
-    height: auto;
+    width: 100vw; /* Full viewport width */
+    height: 100vh; /* Full viewport height */
     flex-direction: column;
     background: var(--navbar-bg-gradient);
     box-shadow: var(--navbar-shadow);
     padding: 1rem;
     gap: 1rem;
-    transition: transform var(--transition-speed) ease, opacity var(--transition-speed) ease;
+    transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
     z-index: 999;
     opacity: 0; /* Start with menu hidden */
     visibility: hidden;
+    transform: translateY(-100vh); /* Start off-screen above */
+    box-sizing: border-box; /* Include padding in width calculation */
+    margin: 0; /* Remove any margin */
   }
   
   .navbar-menu.active {
-    transform: translateY(100vh);
+    transform: translateY(0); /* Slide in from top */
     opacity: 1 !important; /* Show when active */
     visibility: visible !important;
   }
@@ -240,8 +263,7 @@
     visibility: visible !important;
     color: var(--navbar-text) !important;
   }
-  
-  /* Critical overrides - these ensure buttons are correctly positioned at all times */
+    /* Critical overrides - these ensure buttons are correctly positioned at all times */
   .navbar-link, 
   .navbar-username, 
   .navbar-link.logout-btn {
@@ -249,6 +271,7 @@
     position: relative !important;
     opacity: 1 !important;
     visibility: visible !important;
+    margin: 5px 0;
   }
   
   /* Prevent any unwanted transitions */
@@ -262,13 +285,22 @@
   }
   
   .navbar-username {
-    width: 100%;
+    width: 90%;
+    max-width: 300px;
     justify-content: center;
     margin-right: 0;
+    margin-bottom: 10px;
   }
   
   .navbar-link {
-    width: 100%;
+    width: 90%;
+    max-width: 300px;
     justify-content: center;
+    padding: 0.8rem 1rem;
+    font-size: 1.1rem;
+  }
+  
+  .navbar-link.logout-btn {
+    margin-top: 15px;
   }
 }
