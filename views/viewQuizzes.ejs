@@ -285,8 +285,7 @@
             color: white;
             border-color: #2196F3;
         }
-        
-        /* Modal Styles */
+          /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -298,49 +297,72 @@
             background-color: rgba(0, 0, 0, 0.5);
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(3px);
+            transition: all 0.3s ease;
         }
         
         .modal-content {
             background-color: white;
             padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             width: 100%;
             max-width: 500px;
-            width: 100%;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             position: relative;
+            transform: translateY(0);
+            animation: modalFadeIn 0.3s ease-out;
+            border-top: 4px solid #F44336;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         /* Results Modal Specific Styles */
         .results-modal-content {
             max-width: 900px;
             width: 90%;
+            border-top: 4px solid #2196F3;
         }
-        
-        .modal-header {
+          .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #eee;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             padding-bottom: 15px;
         }
         
         .modal-header h3 {
             margin: 0;
             color: #333;
+            font-weight: 600;
+            font-size: 1.4em;
         }
         
         .close-modal {
             font-size: 24px;
             cursor: pointer;
             color: #666;
-            transition: color 0.2s;
+            transition: all 0.2s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
         
         .close-modal:hover {
             color: #e74c3c;
+            background-color: #f1f1f1;
         }
         
         .results-stats {
@@ -422,8 +444,7 @@
             border-radius: 4px;
             font-size: 12px;
         }
-        
-        .no-results {
+          .no-results {
             padding: 30px;
             text-align: center;
             color: #6c757d;
@@ -437,6 +458,60 @@
             font-size: 48px;
             margin-bottom: 15px;
             color: #adb5bd;
+        }
+        
+        .modal-body {
+            padding: 5px 0 20px 0;
+            color: #555;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .modal-body p {
+            margin-bottom: 12px;
+        }
+        
+        .modal-body strong {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .cancel-btn {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+        
+        .cancel-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .confirm-btn {
+            background-color: #F44336;
+            color: white;
+        }
+        
+        .confirm-btn:hover {
+            background-color: #D32F2F;
         }
         
         .loading-row, .error-row {
@@ -471,13 +546,39 @@
             align-items: center;
             transition: background-color 0.3s;
         }
-        
-        .results-btn:hover {
+          .results-btn:hover {
             background-color: #388e3c;
+        }
+        
+        /* Alert styles */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease-out;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body>    <div class="modern-navbar">
+<body><div class="modern-navbar">
         <div class="navbar-brand">
             <img src="/assets/images/pragati_icon.png" alt="Pragati Logo" class="navbar-logo">
             <h1 class="navbar-title">View Quizzes</h1>
@@ -898,17 +999,29 @@
                 minute: '2-digit'
             });
         }
-        
-        // Function to show delete confirmation modal
+          // Function to show delete confirmation modal
         function showDeleteModal(quizId, quizTitle) {
-    deleteQuizId = parseInt(quizId, 10); // Ensure it's an integer
-    deleteQuizTitle.textContent = quizTitle;
-    deleteModal.style.display = 'flex';
-}
+            deleteQuizId = parseInt(quizId, 10); // Ensure it's an integer
+            deleteQuizTitle.textContent = quizTitle;
+            
+            // Show modal with animation
+            deleteModal.style.display = 'flex';
+            deleteModal.style.opacity = '0';
+            setTimeout(() => {
+                deleteModal.style.opacity = '1';
+            }, 10);
+            
+            // Focus on the cancel button by default (safety)
+            setTimeout(() => cancelDeleteBtn.focus(), 100);
+        }
         
         // Function to close modal
         function closeModal() {
-            deleteModal.style.display = 'none';
+            // Hide with animation
+            deleteModal.style.opacity = '0';
+            setTimeout(() => {
+                deleteModal.style.display = 'none';
+            }, 300);
         }
         
         // Function to delete quiz
@@ -947,17 +1060,26 @@
         showAlert('Error deleting quiz. Please try again.', 'error');
         closeModal();
     });
-}
-
-        // Function to show alert message
+}        // Function to show alert message
         function showAlert(message, type) {
-            alertMessage.textContent = message;
+            // Add appropriate icon based on message type
+            const icon = type === 'success' ? 
+                '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>' : 
+                '<i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>';
+            
+            alertMessage.innerHTML = `${icon}${message}`;
             alertMessage.className = `alert alert-${type}`;
             alertMessage.style.display = 'block';
             
-            // Hide after 5 seconds
+            // Slide in animation handled by CSS
+            
+            // Hide after 5 seconds with fade out
             setTimeout(() => {
-                alertMessage.style.display = 'none';
+                alertMessage.style.opacity = '0';
+                setTimeout(() => {
+                    alertMessage.style.display = 'none';
+                    alertMessage.style.opacity = '1';
+                }, 300);
             }, 5000);
         }
         
