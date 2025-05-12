@@ -7,6 +7,8 @@
     <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/modern-navbar.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -228,13 +230,20 @@
         </div>
     </div>
 
-    <div id="main-content">
-        <div class="navbar">
-            <h1>Student Quiz</h1>
-            <div class="fullscreen-status" id="fullscreen-indicator">
-                <i class="fas fa-expand"></i> Fullscreen Mode Active
+    <div id="main-content">        <div class="modern-navbar">
+            <div class="navbar-brand">
+                <img src="/assets/images/pragati_icon.png" alt="Pragati Logo" class="navbar-logo">
+                <h1 class="navbar-title">Student Quiz</h1>
             </div>
-            <div class="username" id="usernameDisplay">Welcome, <%= user.firstName %> <%= user.lastName %></div>
+            <div class="navbar-menu">
+                <div class="fullscreen-status" id="fullscreen-indicator">
+                    <i class="fas fa-expand"></i> Fullscreen Mode Active
+                </div>
+                <div class="navbar-username">
+                    <i class="fas fa-user-graduate"></i>
+                    Welcome, <%= user.firstName %> <%= user.lastName %>
+                </div>
+            </div>
         </div>
 
         <div class="container">
@@ -1568,12 +1577,12 @@
             await response.json();
             
             return true;  // Success
-            
-        } catch (error) {
+              } catch (error) {
             console.error("Error submitting quiz silently:", error);
             return false;  // Failure
         }
     }
     </script>
+    <script src="/assets/js/modern-navbar.js"></script>
 </body>
 </html>

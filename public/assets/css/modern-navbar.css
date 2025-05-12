@@ -1,0 +1,193 @@
+/* Modern Navbar CSS for Pragati */
+:root {
+  --navbar-bg: #2a2a72;
+  --navbar-bg-gradient: linear-gradient(135deg, #2a2a72 0%, #4361ee 100%);
+  --navbar-text: #ffffff;
+  --navbar-highlight: #4CC9F0;
+  --navbar-hover: #f8f9fa;
+  --navbar-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.3s;
+}
+
+.modern-navbar {
+  background: var(--navbar-bg-gradient);
+  color: var(--navbar-text);
+  padding: 0.8rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--navbar-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  transition: padding var(--transition-speed) ease;
+}
+
+.navbar-shrink {
+  padding: 0.5rem 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo {
+  height: 40px;
+  margin-right: 15px;
+  transition: transform var(--transition-speed) ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.navbar-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  background: linear-gradient(90deg, #fff, #e0e0e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-speed) ease;
+}
+
+.navbar-title:hover {
+  transform: translateY(-2px);
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navbar-username {
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-right: 0.5rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-username i {
+  font-size: 0.9rem;
+}
+
+.navbar-link {
+  color: var(--navbar-text);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all var(--transition-speed) ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.navbar-link::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--navbar-highlight);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s ease;
+}
+
+.navbar-link:hover {
+  color: var(--navbar-hover);
+  transform: translateY(-2px);
+}
+
+.navbar-link:hover::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.navbar-link i {
+  font-size: 1rem;
+}
+
+.navbar-link.logout-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-link.logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Hamburger menu for mobile */
+.navbar-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--navbar-text);
+  cursor: pointer;
+  transition: color var(--transition-speed) ease;
+}
+
+.navbar-toggle:hover {
+  color: var(--navbar-highlight);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .modern-navbar {
+    padding: 0.8rem 1rem;
+  }
+  
+  .navbar-toggle {
+    display: block;
+  }
+  
+  .navbar-menu {
+    position: fixed;
+    top: -100vh;
+    left: 0;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    background: var(--navbar-bg-gradient);
+    box-shadow: var(--navbar-shadow);
+    padding: 1rem;
+    gap: 1rem;
+    transition: transform var(--transition-speed) ease;
+    z-index: 999;
+  }
+  
+  .navbar-menu.active {
+    transform: translateY(100vh);
+  }
+  
+  .navbar-username {
+    width: 100%;
+    justify-content: center;
+    margin-right: 0;
+  }
+  
+  .navbar-link {
+    width: 100%;
+    justify-content: center;
+  }
+}

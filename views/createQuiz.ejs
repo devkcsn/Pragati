@@ -7,6 +7,8 @@
     <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/modern-navbar.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root {
             --primary-color: #4361ee;
@@ -578,14 +580,30 @@
         }
     </style>
 </head>
-<body>
-
-    <div class="navbar">
-        <h1>Create Quiz</h1>
-        <div class="nav-links">
-            <div class="username">Welcome, <%= user.firstName %> <%= user.lastName %></div>
-            <a href="/coordinatorDashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+<body>    <div class="modern-navbar">
+        <div class="navbar-brand">
+            <img src="/assets/images/pragati_icon.png" alt="Pragati Logo" class="navbar-logo">
+            <h1 class="navbar-title">Create Quiz</h1>
+        </div>
+        <button class="navbar-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="navbar-menu">
+            <div class="navbar-username">
+                <i class="fas fa-user-tie"></i>
+                Welcome, <%= user.firstName %> <%= user.lastName %>
+            </div>
+            <a href="/coordinatorDashboard" class="navbar-link">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </a>            <a href="/viewQuizzes" class="navbar-link">
+                <i class="fas fa-clipboard-list"></i>
+                View Quizzes
+            </a>
+            <a href="/logout" class="navbar-link logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
         </div>
     </div>
 
@@ -902,8 +920,8 @@
                 setTimeout(() => {
                     window.location.href = '/coordinatorDashboard';
                 }, 300);
-            });
-        }
+            });        }
     </script>
+    <script src="/assets/js/modern-navbar.js"></script>
 </body>
 </html>
