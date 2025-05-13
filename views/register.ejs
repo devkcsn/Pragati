@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <title>Pragati - Registration Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
     <link rel="shortcut icon" href="books-stack-of-three.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -261,14 +262,19 @@
             border-radius: 45px; /* Match input roundness */
             cursor: pointer;
         }
-        
-        button:hover {
+          button:hover {
             transform: scale(1.02);
             background-color: #000000;
             color: #ffffff;
         }
         
-        /* Password Field */
+        /* Mobile touch feedback */
+        button:active {
+            transform: scale(0.98);
+            background-color: #000000;
+            color: #ffffff;
+        }
+          /* Password Field */
         .password-container {
             position: relative;
         }
@@ -285,6 +291,15 @@
             transform: translateY(-50%);
             cursor: pointer;
             color: #ffffff;
+            /* Improve touch target for mobile devices */
+            padding: 10px;
+            margin-right: -10px;
+            transition: all 0.2s ease;
+        }
+        
+        /* Feedback for touch interactions */
+        .toggle-password:active {
+            opacity: 0.7;
         }
         
         /* Scrollbar Styling */
@@ -305,8 +320,7 @@
         .form-container::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.7);
         }
-        
-        /* Error Message */
+          /* Error Message */
         #errorMessage {
             position: absolute;
             bottom: 10px;
@@ -319,6 +333,21 @@
             z-index: 2;
             text-align: center;
             max-width: 90%;
+        }
+        
+        /* Mobile error message improvements */
+        @media (max-width: 600px) {
+            #errorMessage {
+                padding: 12px 15px;
+                font-size: 13px;
+                bottom: 20px;
+                max-width: 95%;
+            }
+            
+            .field-error-message {
+                font-size: 11px;
+                padding: 0 5px;
+            }
         }
         
         /* Field Error Styles */
@@ -375,8 +404,7 @@
         .slideUp {
             animation: slideUp 0.3s ease forwards;
         }
-        
-        /* Responsive Design */
+          /* Responsive Design */
         @media (max-width: 800px) {
             .container {
                 width: 90%;
@@ -389,7 +417,8 @@
             
             .form-container {
                 width: 100%;
-                height: 520px;
+                height: 600px; /* Taller for registration form */
+                padding: 30px 25px;
             }
             
             .image-container {
@@ -398,9 +427,99 @@
             
             h3 {
                 position: relative;
-                top: 80px;
+                top: 20px;
                 left: 50%;
+                margin-bottom: 20px;
                 z-index: 2;
+            }
+            
+            .logo img {
+                width: 250px;
+                height: auto;
+            }
+        }
+        
+        /* Additional mobile optimizations */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                border-radius: 25px;
+                top: 55%;
+            }
+            
+            .form-container {
+                padding: 25px 20px;
+                height: 650px;
+            }
+            
+            /* Make name fields stack on small screens */
+            .name-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .name-field {
+                width: 100%;
+            }
+            
+            input, button, .custom-select-trigger {
+                height: 45px;
+                font-size: 14px;
+            }
+            
+            label {
+                margin-top: 15px;
+                font-size: 15px;
+            }
+            
+            button {
+                font-size: 16px;
+                margin-top: 20px;
+            }
+            
+            .logo img {
+                width: 200px;
+            }
+            
+            body {
+                background-position: center;
+            }
+            
+            /* Make touch targets larger */
+            .toggle-password {
+                padding: 10px;
+                right: 5px;
+            }
+            
+            /* Adjust role dropdown for mobile */
+            .custom-options {
+                max-height: 180px;
+            }
+            
+            .option-item {
+                padding: 14px 15px; /* Larger touch target */
+            }
+        }
+          /* Very small screens */
+        @media (max-width: 380px) {
+            .form-container {
+                height: 680px;
+            }
+            
+            h3 {
+                font-size: 22px;
+            }
+            
+            /* Better input focus handling on mobile */
+            input:focus, .custom-select-trigger:focus {
+                transform: scale(1.01); /* Less aggressive scale on mobile */
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+                font-size: 16px; /* Prevent iOS zoom on input focus */
+            }
+            
+            /* Fix for iOS zooming */
+            input, select, textarea, .custom-select-trigger {
+                font-size: 16px; /* Minimum font size to prevent zoom on iOS */
             }
         }
     </style>
@@ -441,32 +560,30 @@
                     <div id="role-display" class="selected-role"></div>
                 </div>
                 
-                <!-- Name fields in a row -->
-                <div class="name-row">
+                <!-- Name fields in a row -->                <div class="name-row">
                     <div class="name-field">
                         <label for="first_name">First Name</label>
-                        <input type="text" name="first_name" placeholder="First Name" id="first_name">
+                        <input type="text" name="first_name" placeholder="First Name" id="first_name" autocomplete="given-name">
                     </div>
                     
                     <div class="name-field">
                         <label for="last_name">Last Name</label>
-                        <input type="text" name="last_name" placeholder="Last Name" id="last_name">
+                        <input type="text" name="last_name" placeholder="Last Name" id="last_name" autocomplete="family-name">
                     </div>
                 </div>
                 
                 <label for="email">Email ID</label>
-                <input type="email" name="email" placeholder="Email" id="email">
+                <input type="email" name="email" placeholder="Email" id="email" autocomplete="email" inputmode="email">
                 
                 <label for="phone">Phone No</label>
-                <input type="tel" name="phone" placeholder="Phone Number" id="phone">
+                <input type="tel" name="phone" placeholder="Phone Number" id="phone" autocomplete="tel" inputmode="tel">
                 
                 <label for="username">Username</label>
-                <input type="text" name="username" placeholder="Username" id="username">
+                <input type="text" name="username" placeholder="Username" id="username" autocomplete="username" autocapitalize="none">
                 
-                <label for="password">Password</label>
-                <div class="password-container">
-                    <input type="password" name="password" placeholder="Password" id="password">
-                    <i class="far fa-eye toggle-password" onclick="togglePassword()"></i>
+                <label for="password">Password</label>                <div class="password-container">
+                    <input type="password" name="password" placeholder="Password" id="password" autocomplete="new-password">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword(event)"></i>
                 </div>
                 
                 <button type="submit" class="button" id="registerButton">Register</button>
@@ -507,9 +624,12 @@
                 }
             });
             
-            // Handle option selection
-            optionItems.forEach(item => {
-                item.addEventListener('click', function() {
+            // Handle option selection        // Improved mobile touch handling for role selection
+        optionItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent default touch behaviors
+                    e.stopPropagation(); // Stop event bubbling
+                    
                     const value = this.getAttribute('data-value');
                     
                     // Skip if the "Select Role" option is clicked
@@ -545,6 +665,20 @@
                     // Trigger change event on select
                     const event = new Event('change');
                     roleSelect.dispatchEvent(event);
+                    
+                    // Add a slight delay before allowing the next touch to ensure animations complete
+                    setTimeout(() => {
+                        item.style.pointerEvents = 'auto';
+                    }, 300);
+                });
+                
+                // Add touch-specific handling
+                item.addEventListener('touchstart', function() {
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                });
+                
+                item.addEventListener('touchend', function() {
+                    this.style.backgroundColor = '';
                 });
             });
             
@@ -557,11 +691,16 @@
                     roleTrigger.classList.remove('role-glow');
                 }
             });
-        });
-
-        function togglePassword() {
+        });        function togglePassword(e) {
+            // Prevent default behavior and stop propagation
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
             const passwordField = document.getElementById('password');
             const toggleIcon = document.querySelector('.toggle-password');
+            
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
                 toggleIcon.classList.remove('fa-eye');
@@ -571,6 +710,9 @@
                 toggleIcon.classList.remove('fa-eye-slash');
                 toggleIcon.classList.add('fa-eye');
             }
+            
+            // Return false to prevent any default action
+            return false;
         }
         
         // Clear all field error indicators
@@ -644,9 +786,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('registerForm');
             
-            if (registerForm) {
-                registerForm.addEventListener('submit', async function(event) {
+            if (registerForm) {                registerForm.addEventListener('submit', async function(event) {
                     event.preventDefault(); // Prevent the default form submission
+                    
+                    // Hide mobile keyboard after submission
+                    document.activeElement.blur();
                     
                     // Clear previous errors
                     clearFieldErrors();
