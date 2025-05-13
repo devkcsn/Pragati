@@ -191,6 +191,47 @@
                 flex-direction: column;
             }
         }
+        .warning-title {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        /* Frame capture notification */
+        .frame-capture-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(183, 28, 28, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-out 5s forwards;
+            font-weight: 500;
+        }
+
+        .frame-capture-notification i {
+            font-size: 24px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
     </style>
 </head>
 <body>    <!-- Initial Fullscreen Modal -->
@@ -1069,6 +1110,11 @@
                             videoFeedContainer.appendChild(videoFeed);
                         }
                         
+                        // Check if frames were captured and show notification
+                        if (data.frames_captured && !document.getElementById('frame-capture-notification')) {
+                            showFrameCaptureNotification();
+                        }
+                        
                         // Check for multiple faces first
                         if (data.multi_face && !multiFaceDetected) {
                             // Just detected multiple faces
@@ -1150,6 +1196,16 @@
                                 showLookingAwayViolationWarning();
                                 return; // Stop further processing since we're handling the violation
                             }
+                            
+                            // Check for multiple incidents of looking away (4+ seconds more than 3 times)
+                            if (data.away_incidents_count >= 3 && !faceMonitoringWarningSent) {
+                                faceMonitoringWarningSent = true;
+                                recordSecurityIssue('multiple-looking-away-incidents', data.away_incidents_count);
+                                
+                                // Show the multiple violations warning and submit the quiz
+                                showMultipleLookingAwayViolationWarning();
+                                return; // Stop further processing since we're handling the violation
+                            }
                         }
                         
                         // Auto-submit triggered by server (fallback)
@@ -1189,9 +1245,9 @@
                 
                 // Set appropriate warning based on type
                 if (warningType === 'looking-away') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i><span class="warning-title">NO FACE DETECTED</span><br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!<div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">Warning: Frame captures will be recorded for violations</div>';
                 } else if (warningType === 'multiple-faces') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i><span class="warning-title">MULTIPLE FACES DETECTED</span><br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!<div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">Warning: Frame captures will be recorded for violations</div>';
                 }
                 
                 document.body.appendChild(warningElement);
@@ -1200,9 +1256,9 @@
                 warningElement.style.display = 'block';
                 
                 if (warningType === 'looking-away') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i><span class="warning-title">NO FACE DETECTED</span><br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!<div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">Warning: Frame captures will be recorded for violations</div>';
                 } else if (warningType === 'multiple-faces') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i><span class="warning-title">MULTIPLE FACES DETECTED</span><br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!<div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">Warning: Frame captures will be recorded for violations</div>';
                 }
             }
         }
@@ -1539,6 +1595,71 @@
         }, 3000);
     }
 
+    // Function to show multiple looking away violations warning
+    function showMultipleLookingAwayViolationWarning() {
+        // Create looking away violation warning element
+        const violationWarning = document.createElement('div');
+        violationWarning.id = 'multiple-looking-away-violation-warning';
+        violationWarning.style.position = 'fixed';
+        violationWarning.style.top = '0';
+        violationWarning.style.left = '0';
+        violationWarning.style.width = '100%';
+        violationWarning.style.height = '100%';
+        violationWarning.style.backgroundColor = 'rgba(220, 0, 0, 0.95)';
+        violationWarning.style.color = 'white';
+        violationWarning.style.display = 'flex';
+        violationWarning.style.flexDirection = 'column';
+        violationWarning.style.justifyContent = 'center';
+        violationWarning.style.alignItems = 'center';
+        violationWarning.style.zIndex = '3000';
+        violationWarning.style.textAlign = 'center';
+        violationWarning.style.padding = '20px';
+        violationWarning.style.boxSizing = 'border-box';
+        
+        // Create warning content
+        const warningIcon = document.createElement('div');
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(40px, 8vw, 80px); margin-bottom: 20px;"></i>';
+        
+        const warningTitle = document.createElement('h1');
+        warningTitle.textContent = 'MULTIPLE EXAM VIOLATIONS DETECTED';
+        warningTitle.style.fontSize = 'clamp(20px, 6vw, 36px)';
+        warningTitle.style.marginBottom = '20px';
+        warningTitle.style.padding = '0 10px';
+        
+        const warningMessage = document.createElement('p');
+        warningMessage.textContent = 'You have looked away from the screen multiple times. This is a violation of exam rules.';
+        warningMessage.style.fontSize = 'clamp(16px, 4vw, 24px)';
+        warningMessage.style.marginBottom = '20px';
+        warningMessage.style.padding = '0 10px';
+        
+        const warningSubmitting = document.createElement('p');
+        warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
+        warningSubmitting.style.fontSize = 'clamp(14px, 3.5vw, 20px)';
+        warningSubmitting.style.marginBottom = '30px';
+        warningSubmitting.style.padding = '0 10px';
+        
+        // Create redirect message
+        const redirectMessage = document.createElement('p');
+        redirectMessage.textContent = 'Redirecting to dashboard...';
+        redirectMessage.style.fontSize = 'clamp(12px, 3vw, 16px)';
+        redirectMessage.style.marginBottom = '10px';
+        
+        // Add elements to warning
+        violationWarning.appendChild(warningIcon);
+        violationWarning.appendChild(warningTitle);
+        violationWarning.appendChild(warningMessage);
+        violationWarning.appendChild(warningSubmitting);
+        violationWarning.appendChild(redirectMessage);
+        document.body.appendChild(violationWarning);
+        
+        // Auto-submit after showing the warning for 3 seconds
+        setTimeout(async () => {
+            await submitQuizSilently(true);
+            // Redirect directly without showing any further popups
+            window.location.href = '/studentDashboard';
+        }, 3000);
+    }
+
     // Function to submit quiz silently without showing alerts (for violation cases)
     async function submitQuizSilently(isAutoSubmit = true) {
         // Prevent multiple submissions
@@ -1679,6 +1800,28 @@
         
         // Log a message in the console
         console.log('Quiz access blocked: Mobile device detected. Desktop required.');
+    }
+
+    // Function to show frame capture notification
+    function showFrameCaptureNotification() {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.id = 'frame-capture-notification';
+        notification.className = 'frame-capture-notification';
+        notification.innerHTML = `
+            <i class="fas fa-camera"></i>
+            <div>Violation frames captured and recorded for review</div>
+        `;
+        
+        // Add to body
+        document.body.appendChild(notification);
+        
+        // Remove after animation completes (6 seconds)
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.parentElement.removeChild(notification);
+            }
+        }, 6000);
     }
     </script>
     <script src="/assets/js/modern-navbar.js"></script>

@@ -576,6 +576,93 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        /* Violation indicators */
+        .violation-indicator {
+            background-color: #ffcdd2;
+            color: #c62828;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .violation-indicator:hover {
+            background-color: #ef9a9a;
+        }
+        
+        /* Frame viewer modal */
+        .frames-modal-content {
+            max-width: 800px;
+            width: 90%;
+            border-top: 4px solid #c62828;
+        }
+        
+        .frames-carousel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 15px 0;
+        }
+        
+        .frame-image {
+            max-width: 100%;
+            max-height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .frame-caption {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+            text-align: center;
+        }
+        
+        .frame-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .frame-nav-btn {
+            background-color: #f1f1f1;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .frame-nav-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .violation-message {
+            background-color: #ffebee;
+            border-left: 4px solid #c62828;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .violation-timestamp {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body><div class="modern-navbar">
@@ -705,6 +792,7 @@
                                 <th>Percentage</th>
                                 <th>Date Completed</th>
                                 <th>Status</th>
+                                <th>Violations</th>
                             </tr>
                         </thead>
                         <tbody id="resultsTableBody">
@@ -720,6 +808,39 @@
         </div>
     </div>
     
+    <!-- Violation Frames Modal -->
+    <div id="framesModal" class="modal">
+        <div class="modal-content frames-modal-content">
+            <div class="modal-header">
+                <h3>Violation Frames: <span id="violationStudentName"></span></h3>
+                <span class="close-modal" id="closeFramesModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="violation-message">
+                    <p><strong>Warning:</strong> The following frames were captured when quiz security rules were violated. The system automatically captures frames when:</p>
+                    <ul>
+                        <li>Student looks away for 8+ seconds continuously (major violation)</li>
+                        <li>Student looks away for 4+ seconds multiple times (3+ times)</li>
+                    </ul>
+                </div>
+                
+                <div class="frames-carousel">
+                    <img id="currentFrame" class="frame-image" src="" alt="Violation frame">
+                    <div class="frame-caption" id="frameCaption">Loading frame...</div>
+                    <div class="frame-navigation">
+                        <button class="frame-nav-btn" id="prevFrameBtn">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span id="frameCounter">Frame 1 of 1</span>
+                        <button class="frame-nav-btn" id="nextFrameBtn">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Store the current page and quizzes per page
         let currentPage = 1;
@@ -727,6 +848,8 @@
         let allQuizzes = [];
         let filteredQuizzes = [];
         let deleteQuizId = null;
+        let currentViolationFrames = []; // To store violation frames for current view
+        let currentFrameIndex = 0; // Current frame index
           // DOM elements
         const quizContainer = document.getElementById('quizContainer');
         const emptyState = document.getElementById('emptyState');
@@ -736,8 +859,10 @@
         const searchBox = document.getElementById('searchBox');
         const deleteModal = document.getElementById('deleteModal');
         const resultsModal = document.getElementById('resultsModal');
+        const framesModal = document.getElementById('framesModal');
         const closeModalBtn = document.querySelector('.close-modal');
         const closeResultsModalBtn = document.getElementById('closeResultsModal');
+        const closeFramesModalBtn = document.getElementById('closeFramesModal');
         const cancelDeleteBtn = document.getElementById('cancelDelete');
         const confirmDeleteBtn = document.getElementById('confirmDelete');
         const deleteQuizTitle = document.getElementById('deleteQuizTitle');
@@ -748,6 +873,12 @@
         const resultsTableBody = document.getElementById('resultsTableBody');
         const noResults = document.getElementById('noResults');
         const alertMessage = document.getElementById('alertMessage');
+        const violationStudentName = document.getElementById('violationStudentName');
+        const currentFrame = document.getElementById('currentFrame');
+        const frameCaption = document.getElementById('frameCaption');
+        const frameCounter = document.getElementById('frameCounter');
+        const prevFrameBtn = document.getElementById('prevFrameBtn');
+        const nextFrameBtn = document.getElementById('nextFrameBtn');
         
         // Event listeners for filters
         statusFilter.addEventListener('change', applyFilters);
@@ -756,8 +887,11 @@
           // Modal event listeners
         closeModalBtn.addEventListener('click', closeModal);
         closeResultsModalBtn.addEventListener('click', closeResultsModal);
+        closeFramesModalBtn.addEventListener('click', closeFramesModal);
         cancelDeleteBtn.addEventListener('click', closeModal);
         confirmDeleteBtn.addEventListener('click', deleteQuiz);
+        prevFrameBtn.addEventListener('click', showPreviousFrame);
+        nextFrameBtn.addEventListener('click', showNextFrame);
         
         // Fetch quizzes when page loads
         document.addEventListener('DOMContentLoaded', fetchQuizzes);
@@ -1094,7 +1228,7 @@
         async function fetchAndShowResults(quizId, quizTitle) {
             try {
                 // Show loading state
-                resultsTableBody.innerHTML = '<tr><td colspan="5" class="loading-row">Loading results...</td></tr>';
+                resultsTableBody.innerHTML = '<tr><td colspan="6" class="loading-row">Loading results...</td></tr>';
                 resultsQuizTitle.textContent = quizTitle;
                 resultsModal.style.display = 'flex';
                 
@@ -1123,6 +1257,21 @@
                     
                     data.attempts.forEach(attempt => {
                         const row = document.createElement('tr');
+                        
+                        // Create the violation cell content
+                        let violationCell = '';
+                        if (attempt.violationCount && attempt.violationCount > 0) {
+                            violationCell = `
+                                <span class="violation-indicator" 
+                                      onclick="showViolationFrames(${quizId}, '${attempt.studentId}', '${attempt.sessionId}', '${attempt.studentName}')">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    ${attempt.violationCount} violations
+                                </span>
+                            `;
+                        } else {
+                            violationCell = 'None';
+                        }
+                        
                         row.innerHTML = `
                             <td>${attempt.studentName}</td>
                             <td>${attempt.score}/${attempt.total_questions}</td>
@@ -1131,6 +1280,7 @@
                             <td>${attempt.auto_submitted ? 
                                 '<span class="auto-submit-tag">Auto-submitted</span>' : 
                                 '<span class="manual-submit-tag">Manual</span>'}</td>
+                            <td>${violationCell}</td>
                         `;
                         resultsTableBody.appendChild(row);
                     });
@@ -1145,7 +1295,7 @@
                 // Show error message
                 resultsTableBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="error-row">
+                        <td colspan="6" class="error-row">
                             <i class="fas fa-exclamation-triangle"></i>
                             Failed to load results: ${error.message || 'Unknown error'}
                         </td>
@@ -1158,6 +1308,111 @@
           // Function to close results modal
         function closeResultsModal() {
             resultsModal.style.display = 'none';
+        }
+        
+        // Function to close frames modal
+        function closeFramesModal() {
+            framesModal.style.display = 'none';
+            currentViolationFrames = [];
+            currentFrameIndex = 0;
+        }
+        
+        // Function to fetch and show violation frames
+        async function showViolationFrames(quizId, studentId, sessionId, studentName) {
+            try {
+                // Show the frames modal and set student name
+                framesModal.style.display = 'flex';
+                violationStudentName.textContent = studentName;
+                
+                // Show loading state
+                currentFrame.src = '/assets/images/loading.gif';
+                frameCaption.textContent = 'Loading violation frames...';
+                frameCounter.textContent = 'Loading...';
+                
+                // Fetch the violation frames from the server
+                const response = await fetch(`/api/quizzes/${quizId}/violations?studentId=${studentId}&sessionId=${sessionId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch violation frames');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch violation frames');
+                }
+                
+                // Store the frames and reset index
+                currentViolationFrames = data.frames;
+                currentFrameIndex = 0;
+                
+                if (currentViolationFrames.length === 0) {
+                    // No frames available
+                    currentFrame.src = '/assets/images/no-image.png';
+                    frameCaption.textContent = 'No violation frames available.';
+                    frameCounter.textContent = 'No frames';
+                    prevFrameBtn.disabled = true;
+                    nextFrameBtn.disabled = true;
+                } else {
+                    // Show the first frame
+                    showCurrentFrame();
+                }
+                
+            } catch (error) {
+                console.error('Error fetching violation frames:', error);
+                currentFrame.src = '/assets/images/error.png';
+                frameCaption.textContent = `Error: ${error.message || 'Unknown error'}`;
+                frameCounter.textContent = 'Error loading frames';
+            }
+        }
+        
+        // Function to show the current frame
+        function showCurrentFrame() {
+            if (currentViolationFrames.length === 0) return;
+            
+            const frame = currentViolationFrames[currentFrameIndex];
+            currentFrame.src = `data:image/jpeg;base64,${frame.frame_data}`;
+            
+            // Format the timestamp
+            const timestamp = new Date(frame.timestamp);
+            const formattedTime = timestamp.toLocaleString();
+            
+            // Create a readable violation type
+            let violationType = frame.violation_type;
+            if (violationType.includes('major_violation')) {
+                violationType = 'Major Violation (8+ seconds looking away)';
+            } else if (violationType.includes('early_warning')) {
+                violationType = 'Looking Away (4+ seconds)';
+            } else if (violationType.includes('multiple_violations')) {
+                violationType = 'Multiple Violations (3+ incidents)';
+            }
+            
+            frameCaption.innerHTML = `
+                <strong>${violationType}</strong>
+                <div class="violation-timestamp">${formattedTime}</div>
+            `;
+            
+            frameCounter.textContent = `Frame ${currentFrameIndex + 1} of ${currentViolationFrames.length}`;
+            
+            // Update button states
+            prevFrameBtn.disabled = currentFrameIndex === 0;
+            nextFrameBtn.disabled = currentFrameIndex === currentViolationFrames.length - 1;
+        }
+        
+        // Function to show the previous frame
+        function showPreviousFrame() {
+            if (currentFrameIndex > 0) {
+                currentFrameIndex--;
+                showCurrentFrame();
+            }
+        }
+        
+        // Function to show the next frame
+        function showNextFrame() {
+            if (currentFrameIndex < currentViolationFrames.length - 1) {
+                currentFrameIndex++;
+                showCurrentFrame();
+            }
         }
     </script>    <script src="/assets/js/modern-navbar.js"></script>
     <script src="/assets/js/navbar-fix.js"></script>

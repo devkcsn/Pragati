@@ -8,6 +8,8 @@ import json
 import base64
 import argparse
 import sys
+import os
+from datetime import datetime
 
 class FaceMonitor:
     def __init__(self, warning_threshold=8, early_warning_threshold=4):  # Added early warning threshold
@@ -47,7 +49,62 @@ class FaceMonitor:
         self.recovery_frames_needed = 3  # Need 3 consecutive attention frames to cancel warning
         self.current_recovery_frames = 0  # Current streak of attention frames
         
-    async def process_frame(self, websocket):
+        # Frame capture for violations
+        self.violation_frames = []  # To store captured frames
+        self.session_id = None  # Will be set when monitoring starts
+        self.student_id = None  # Will be set when monitoring starts
+        self.quiz_id = None  # Will be set when monitoring starts
+        self.frames_captured = False  # Flag to track if frames have been captured for current violation
+        
+        # Count looking away incidents
+        self.away_incidents_count = 0  # Count incidents where student looked away for > early_warning_threshold
+        self.frames_folder = "violation_frames"  # Folder to store captured frames
+        
+        # Create frames folder if it doesn't exist
+        os.makedirs(self.frames_folder, exist_ok=True)
+        
+    def capture_violation_frames(self, frame, violation_type):
+        """Capture frames for a violation event"""
+        try:
+            # Generate timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Create violation subfolder if needed
+            violation_folder = os.path.join(self.frames_folder, f"{self.session_id}")
+            os.makedirs(violation_folder, exist_ok=True)
+            
+            # Save the frame
+            filename = f"{violation_folder}/violation_{violation_type}_{timestamp}.jpg"
+            cv2.imwrite(filename, frame)
+            
+            # Add frame info to the collection
+            encoded_frame = self.encode_frame_to_base64(frame)
+            self.violation_frames.append({
+                "timestamp": timestamp,
+                "type": violation_type,
+                "image": encoded_frame,
+                "session_id": self.session_id,
+            })
+            
+            print(f"Captured violation frame: {filename}")
+            return True
+        except Exception as e:
+            print(f"Error capturing violation frame: {e}")
+            return False
+    
+    def encode_frame_to_base64(self, frame):
+        """Encode a frame to base64 string"""
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]  # Higher quality for stored frames
+        _, buffer = cv2.imencode('.jpg', frame)
+        return base64.b64encode(buffer).decode('utf-8')
+        
+    async def process_frame(self, websocket, session_data=None):
+        # Initialize websocket and session data
+        if session_data:
+            self.session_id = session_data.get('session_id', 'unknown')
+            self.student_id = session_data.get('student_id', 'unknown')
+            self.quiz_id = session_data.get('quiz_id', 'unknown')
+        
         # Initialize webcam
         cap = cv2.VideoCapture(0)
         
@@ -179,6 +236,7 @@ class FaceMonitor:
                     # Just started looking away
                     self.looking_away = True
                     self.away_start_time = time.time()
+                    self.frames_captured = False  # Reset frame capture flag for new violation
                 
                 # Calculate time spent looking away
                 self.away_duration = time.time() - self.away_start_time
@@ -187,11 +245,28 @@ class FaceMonitor:
                 if self.away_duration >= self.early_warning_threshold and not self.early_warning_shown:
                     self.early_warning_shown = True
                     print(f"EARLY WARNING: Looking away for {self.away_duration:.1f} seconds!")
+                    
+                    # Capture frame for early warning
+                    if not self.frames_captured:
+                        self.capture_violation_frames(frame, "early_warning")
                 
-                # Show warning if looking away for too long
+                # Show warning if looking away for too long (8+ seconds)
                 if self.away_duration >= self.warning_threshold and not self.warning_shown:
                     self.warning_shown = True
                     print(f"WARNING: Looking away for {self.away_duration:.1f} seconds!")
+                    
+                    # Capture multiple frames for serious violation (8+ seconds)
+                    if not self.frames_captured:
+                        self.frames_captured = True
+                        # Capture the current frame
+                        self.capture_violation_frames(frame, "major_violation")
+                        
+                        # Capture 2 more frames with a slight delay for a series
+                        for i in range(2):
+                            await asyncio.sleep(0.5)  # Wait half a second
+                            ret, extra_frame = cap.read()
+                            if ret:
+                                self.capture_violation_frames(extra_frame, f"major_violation_extra_{i+1}")
             else:
                 # Student is looking at screen - handle recovery logic
                 if self.looking_away:
@@ -200,6 +275,25 @@ class FaceMonitor:
                     
                     # Only reset warning status after consistent attention (3 frames)
                     if self.current_recovery_frames >= self.recovery_frames_needed:
+                        # If this was a significant violation (4+ seconds), count it
+                        if self.away_duration >= self.early_warning_threshold:
+                            self.away_incidents_count += 1
+                            print(f"Looking away incident #{self.away_incidents_count} recorded: {self.away_duration:.1f} seconds")
+                            
+                            # Check if this is the 3rd incident of significant duration
+                            if self.away_incidents_count >= 3 and not self.frames_captured:
+                                print(f"MULTIPLE VIOLATIONS: {self.away_incidents_count} incidents of looking away")
+                                self.frames_captured = True
+                                
+                                # Capture multiple frames for repeat violations
+                                self.capture_violation_frames(frame, "multiple_violations")
+                                # Capture 2 more frames for a series
+                                for i in range(2):
+                                    await asyncio.sleep(0.5)  # Wait half a second
+                                    ret, extra_frame = cap.read()
+                                    if ret:
+                                        self.capture_violation_frames(extra_frame, f"multiple_violations_extra_{i+1}")
+                        
                         if self.warning_shown or self.early_warning_shown:
                             print("Student returned attention - canceling warning")
                         
@@ -237,7 +331,9 @@ class FaceMonitor:
                 'auto_submit': self.away_duration >= self.warning_threshold,
                 'glasses_detected': self.glasses_detected,
                 'detection_confidence': self.detection_confidence,
-                'fps': self.fps
+                'fps': self.fps,
+                'away_incidents_count': self.away_incidents_count,
+                'frames_captured': len(self.violation_frames) > 0
             }
             
             try:
@@ -255,17 +351,52 @@ class FaceMonitor:
         # Release resources
         cap.release()
         print("Face monitoring stopped")
+        
+        # Return captured violation frames
+        return self.violation_frames
 
     def stop(self):
         self.should_continue = False
 
 # Updated handler to work with newer websockets library versions
-async def handler(websocket):
-    # Path parameter is no longer needed in newer websockets versions
-    print(f"Client connected")
+async def handler(websocket, path=None):
+    # Extract session data from the URL query parameters if provided
+    session_data = {}
+    if path and '?' in path:
+        query_string = path.split('?', 1)[1]
+        try:
+            for param in query_string.split('&'):
+                key, value = param.split('=')
+                session_data[key] = value
+        except Exception as e:
+            print(f"Error parsing URL parameters: {e}")
+    
+    print(f"Client connected with session data: {session_data}")
     monitor = FaceMonitor(warning_threshold=8)  # Changed from 10 to 8
     try:
-        await monitor.process_frame(websocket)
+        violation_frames = await monitor.process_frame(websocket, session_data)
+        
+        # If we have violation frames and the session ID was provided, save them
+        if violation_frames and monitor.session_id != 'unknown':
+            print(f"Collected {len(violation_frames)} violation frames for session {monitor.session_id}")
+            
+            # In a real implementation, you would send these to the server to store in the database
+            # For now, we just save them as files locally
+            try:
+                # Create a JSON summary file with frame references
+                summary_file = os.path.join(monitor.frames_folder, f"{monitor.session_id}", "violation_summary.json")
+                with open(summary_file, 'w') as f:
+                    summary_data = {
+                        "session_id": monitor.session_id,
+                        "quiz_id": monitor.quiz_id,
+                        "student_id": monitor.student_id,
+                        "total_frames": len(violation_frames),
+                        "violations": [{"timestamp": frame["timestamp"], "type": frame["type"]} for frame in violation_frames]
+                    }
+                    json.dump(summary_data, f, indent=2)
+                print(f"Saved violation summary to {summary_file}")
+            except Exception as e:
+                print(f"Error saving violation summary: {e}")
     except Exception as e:
         print(f"Error in handler: {e}")
     finally:

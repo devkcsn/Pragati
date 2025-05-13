@@ -1616,7 +1616,8 @@ app.get('/api/quizzes/:id/results', isAuthenticated, async (req, res) => {
         // Get all quiz attempts for this quiz
         const [attempts] = await connection.execute(
             `SELECT qa.id, qa.student_username, s.first_name, s.last_name, 
-            qa.score, qa.total_questions, qa.completed_date, qa.auto_submitted
+            qa.score, qa.total_questions, qa.completed_date, qa.auto_submitted,
+            qa.session_id
             FROM quiz_attempts qa
             JOIN students s ON qa.student_username = s.username
             WHERE qa.quiz_id = ?
@@ -1634,12 +1635,27 @@ app.get('/api/quizzes/:id/results', isAuthenticated, async (req, res) => {
             highestScore = Math.max(...attempts.map(attempt => (attempt.score / attempt.total_questions * 100)));
         }
         
+        // Get violation counts for each attempt
+        for (let attempt of attempts) {
+            const [violations] = await connection.execute(
+                `SELECT COUNT(*) as violationCount
+                 FROM quiz_violation_frames
+                 WHERE quiz_id = ? AND student_username = ? AND session_id = ?`,
+                [quizId, attempt.student_username, attempt.session_id]
+            );
+            
+            attempt.violationCount = violations[0].violationCount || 0;
+        }
+        
         // Format attempts with percentage scores
         const formattedAttempts = attempts.map(attempt => ({
             ...attempt,
+            studentId: attempt.student_username,
+            sessionId: attempt.session_id,
             studentName: `${attempt.first_name} ${attempt.last_name}`,
             percentScore: ((attempt.score / attempt.total_questions) * 100).toFixed(2),
-            formattedDate: new Date(attempt.completed_date).toLocaleString()
+            formattedDate: new Date(attempt.completed_date).toLocaleString(),
+            violationCount: attempt.violationCount
         }));
         
         res.json({
@@ -1662,6 +1678,71 @@ app.get('/api/quizzes/:id/results', isAuthenticated, async (req, res) => {
         });
     } finally {
         connection.release();
+    }
+});
+
+// API endpoint to get quiz violation frames for coordinators
+app.get('/api/quizzes/:id/violations', isAuthenticated, async (req, res) => {
+    // Check if user is a coordinator
+    if (req.session.user.role !== 'coordinator') {
+        return res.status(403).json({ 
+            success: false, 
+            message: 'Unauthorized access' 
+        });
+    }
+    
+    const quizId = req.params.id;
+    const studentId = req.query.studentId;
+    const sessionId = req.query.sessionId;
+    
+    if (!studentId || !sessionId) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Student ID and session ID are required' 
+        });
+    }
+    
+    try {
+        const connection = await pool.getConnection();
+        
+        try {
+            // Verify the quiz belongs to this coordinator
+            const [quizCheck] = await connection.execute(
+                'SELECT * FROM quizzes WHERE id = ? AND created_by = ?',
+                [quizId, req.session.user.id]
+            );
+            
+            if (quizCheck.length === 0) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Quiz not found or you do not have permission to view it' 
+                });
+            }
+            
+            // Get violation frames for this student/session
+            const [frames] = await connection.execute(
+                `SELECT id, quiz_id, student_username, session_id, violation_type, 
+                 timestamp, frame_data, incident_count
+                 FROM quiz_violation_frames
+                 WHERE quiz_id = ? AND student_username = ? AND session_id = ?
+                 ORDER BY timestamp ASC`,
+                [quizId, studentId, sessionId]
+            );
+            
+            return res.json({ 
+                success: true, 
+                frames: frames
+            });
+            
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error('Error fetching violation frames:', err);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Failed to load violation frames' 
+        });
     }
 });
 
