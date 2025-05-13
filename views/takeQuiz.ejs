@@ -1804,6 +1804,21 @@
 
     // Function to show frame capture notification
     function showFrameCaptureNotification() {
+        // Check if notification already exists or if another was shown recently
+        if (document.getElementById('frame-capture-notification') || 
+            sessionStorage.getItem('lastFrameCaptureNotification')) {
+            return; // Don't show another notification yet
+        }
+        
+        // Set time marker in session storage (will prevent showing too frequently)
+        const now = Date.now();
+        sessionStorage.setItem('lastFrameCaptureNotification', now);
+        
+        // Clear this marker after 30 seconds (minimum time between notifications)
+        setTimeout(() => {
+            sessionStorage.removeItem('lastFrameCaptureNotification');
+        }, 30000);
+        
         // Create notification element
         const notification = document.createElement('div');
         notification.id = 'frame-capture-notification';
@@ -1812,6 +1827,16 @@
             <i class="fas fa-camera"></i>
             <div>Violation frames captured and recorded for review</div>
         `;
+        
+        // Position directly above the video feed
+        const videoFeedContainer = document.getElementById('video-feed-container');
+        if (videoFeedContainer) {
+            const rect = videoFeedContainer.getBoundingClientRect();
+            notification.style.position = 'fixed';
+            notification.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+            notification.style.right = (window.innerWidth - rect.right + (rect.width / 2)) + 'px';
+            notification.style.transform = 'translateX(50%)';
+        }
         
         // Add to body
         document.body.appendChild(notification);
