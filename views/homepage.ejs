@@ -2,31 +2,36 @@
 <html lang="en">
 <head>
     <title>Pragati</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
     <link rel="shortcut icon" href="books-stack-of-three.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
     <style media="screen">
-        /* Base Styles */
+        :root {
+            --vh: 1vh; /* CSS variable for mobile viewport height */
+        }/* Base Styles */
         * {
             padding: 0;
             margin: 0;
             box-sizing: border-box;
-        }
-        
-        body {
+            -webkit-touch-callout: none; /* Prevent callout to copy image, etc when tap to hold on iOS */
+            -webkit-tap-highlight-color: transparent; /* Remove the tap highlight on iOS */
+        }        body {
             background-image: url('/assets/images/background.jpg');
             background-size: cover;
+            background-position: center;
             background-repeat: no-repeat;
-            height: 100vh;
+            height: 100vh; /* Fallback */
+            height: calc(var(--vh, 1vh) * 100); /* Use our custom viewport height variable */
             width: 100vw;
             position: relative;
             z-index: 0;
             overflow: hidden;
             font-family: 'Poppins', sans-serif;
-        }
-
-        /* Blurred overlay */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            overscroll-behavior: none; /* Prevent pull-to-refresh and bounce effects */
+        }/* Blurred overlay */
         .overlay {
             position: fixed;
             top: 0;
@@ -35,16 +40,15 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px); /* Safari support */
             z-index: 0;
         }
-        
-        /* Style for logo */
+          /* Style for logo */
         .logo {
             position: absolute;
             z-index: 1;
-        }
-
-        /* Main container - MODIFIED POSITIONING */
+            touch-action: manipulation; /* Ensures better performance for touch interactions */
+        }/* Main container - MODIFIED POSITIONING */
         .container {
             display: flex;
             width: 800px;
@@ -55,6 +59,7 @@
             right: 30%;
             border-radius: 45px;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); /* Safari support */
             border: 2px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
             z-index: 1;
@@ -108,8 +113,7 @@
             gap: 30px;
             width: 100%;
         }
-        
-        /* Role buttons */
+          /* Role buttons */
         .role-button {
             width: 200px;
             height: 200px;
@@ -123,6 +127,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
         
         .role-button img {
@@ -151,12 +156,25 @@
             opacity: 0.3;
             transform: scale(0.8);
         }
-        
-        .role-button:hover span {
+          .role-button:hover span {
             opacity: 1;
         }
         
-        /* Register button */
+        /* Add touch states for mobile */
+        .role-button:active {
+            transform: scale(0.98);
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .role-button.active img {
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+        
+        .role-button.active span {
+            opacity: 1;
+        }
+          /* Register button */
         .register-button {
             width: 80%;
             height: 55px;
@@ -171,6 +189,7 @@
             align-items: center;
             justify-content: center;
             border: 1px solid rgba(0, 0, 0, 0.1);
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
         
         .register-button:hover {
@@ -180,7 +199,14 @@
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
         
-        /* Sidebar styling */
+        /* Mobile touch feedback */
+        .register-button:active {
+            transform: scale(0.98);
+            background-color: #000000;
+            color: #ffffff;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+          /* Sidebar styling */
         .sidebar {
             position: fixed;
             top: 0;
@@ -189,12 +215,15 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); /* Safari support */
             padding: 80px 30px 30px;
             box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
             z-index: 2;
             color: white;
             transition: right 0.3s ease;
             border-left: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto; /* Allow scrolling for smaller screens */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         }
         
         .sidebar.open {
@@ -226,19 +255,32 @@
             margin-bottom: 10px;
             color: rgba(255, 255, 255, 0.8);
         }
-        
-        .sidebar a {
+          .sidebar a {
             color: #ffffff;
             text-decoration: underline;
             cursor: pointer;
             transition: color 0.2s ease;
+            padding: 5px 0; /* Better touch target */
+            display: inline-block;
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1); /* Subtle highlight on tap */
         }
         
         .sidebar a:hover {
             color: rgba(255, 255, 255, 0.7);
         }
         
-        /* Hamburger icon */
+        /* Mobile sidebar improvements */
+        @media (max-width: 600px) {
+            .sidebar p {
+                font-size: 15px;
+                line-height: 1.5;
+            }
+            
+            .sidebar h3 {
+                margin-top: 10px;
+            }
+        }
+          /* Hamburger icon */
         .hamburger {
             position: fixed;
             top: 20px;
@@ -255,11 +297,18 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
         
         .hamburger:hover {
             background-color: rgba(0, 0, 0, 0.8);
             transform: scale(1.1);
+        }
+        
+        /* Mobile touch feedback */
+        .hamburger:active {
+            transform: scale(0.95);
+            background-color: rgba(0, 0, 0, 0.9);
         }
         
         /* Sidebar close button */
@@ -328,8 +377,7 @@
                 width: 100%;
             }
         }
-        
-        @media (max-width: 600px) {
+          @media (max-width: 600px) {
             .button-row {
                 flex-direction: column;
                 align-items: center;
@@ -358,6 +406,86 @@
             .sidebar {
                 width: 100%;
                 right: -100%;
+            }
+            
+            .logo img {
+                max-width: 200px;
+                height: auto;
+            }
+        }
+          /* Additional mobile optimizations for very small screens */
+        @media (max-width: 480px) {
+            .role-button {
+                width: 130px;
+                height: 130px;
+                border-radius: 30px;
+            }
+            
+            .role-button img {
+                width: 60px;
+                height: 70px;
+            }
+            
+            .role-button span {
+                font-size: 16px;
+            }
+            
+            .register-button {
+                height: 45px;
+                font-size: 16px;
+            }
+            
+            .logo img {
+                max-width: 180px;
+            }
+            
+            .form-container {
+                padding: 30px 20px;
+            }
+            
+            body {
+                background-position: center;
+            }
+            
+            /* Make touch targets larger */
+            .hamburger {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            
+            /* Improve spacing for mobile */
+            .button-container {
+                gap: 20px;
+            }
+        }
+        
+        /* Handle landscape orientation on mobile devices */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container {
+                height: 90vh;
+                top: 50%;
+            }
+            
+            .button-row {
+                flex-direction: row;
+            }
+            
+            .role-button {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .form-container h3 {
+                margin-bottom: 20px;
+            }
+            
+            .logo {
+                top: 10px;
+            }
+            
+            .logo img {
+                max-width: 150px;
             }
         }
     </style>
@@ -418,9 +546,7 @@
     <!-- Hamburger icon -->
     <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
-    </div>
-
-    <script>
+    </div>    <script>
         // Function to handle login based on role
         function login(role) {
             if (role === 'student') {
@@ -450,8 +576,24 @@
             }
         }
         
-        // Add hover effects dynamically
+        // Handle iOS-specific issues
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault(); // Disable iOS zoom
+        });
+        
+        // Fix for 100vh issue on mobile browsers
+        function setMobileHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        
+        // Set the height on page load and resize
+        window.addEventListener('resize', setMobileHeight);
+        window.addEventListener('orientationchange', setMobileHeight);
+        setMobileHeight();
+          // Add hover effects and touch events dynamically
         document.querySelectorAll('.role-button').forEach(button => {
+            // Mouse hover events for desktop
             button.addEventListener('mouseenter', function() {
                 this.querySelector('span').style.opacity = '1';
                 this.querySelector('img').style.opacity = '0.3';
@@ -459,7 +601,19 @@
             
             button.addEventListener('mouseleave', function() {
                 this.querySelector('span').style.opacity = '0';
-                this.querySelector('img').style.opacity = '1';            });
+                this.querySelector('img').style.opacity = '1';
+            });
+            
+            // Touch events for mobile
+            button.addEventListener('touchstart', function() {
+                this.classList.add('active');
+                this.querySelector('span').style.opacity = '1';
+                this.querySelector('img').style.opacity = '0.3';
+            }, { passive: true });
+            
+            button.addEventListener('touchend', function() {
+                this.classList.remove('active');
+            }, { passive: true });
         });
     </script>
 </body>

@@ -15,8 +15,7 @@
             margin: 0;
             box-sizing: border-box;
         }
-        
-        body {
+          body {
             background-image: url('/assets/images/background.jpg');
             background-size: cover;
             background-repeat: no-repeat;
@@ -25,6 +24,8 @@
             position: relative;
             overflow: hidden;
             font-family: 'Poppins', sans-serif;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            overscroll-behavior: none; /* Prevent pull-to-refresh and bounce effects */
         }
         
         .overlay {
