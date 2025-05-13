@@ -1282,6 +1282,19 @@ app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
         return res.redirect('/'); // Redirect non-students to homepage
     }
     
+    // Check if the request is coming from a mobile device
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(userAgent);
+    
+    // Block mobile users at the server level
+    if (isMobileDevice) {
+        // Render a mobile block page or redirect with a message
+        return res.render('mobileBlocked', {
+            user: req.session.user,
+            message: 'Quizzes can only be taken on desktop or laptop computers.'
+        });
+    }
+    
     const quizId = req.params.id; // Get quiz ID from URL parameter
     
     try {
@@ -1308,7 +1321,8 @@ app.get('/takeQuiz/:id', isAuthenticated, async (req, res) => {
                 'SELECT * FROM quiz_attempts WHERE quiz_id = ? AND student_username = ?',
                 [quizId, req.session.user.id]
             );
-              // If student has already taken this quiz, show completion page
+            
+            // If student has already taken this quiz, show completion page
             if (attempts.length > 0) {
                 return res.render('quizCompleted', {
                     user: req.session.user,

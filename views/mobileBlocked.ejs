@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Required - Student Portal</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/modern-navbar.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            text-align: center;
+            padding: 20px;
+        }
+        .message-box {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 40px 30px;
+            margin-top: 30px;
+        }
+        .icon {
+            font-size: 80px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .back-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .device-illustration {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        .device {
+            margin: 0 15px;
+            text-align: center;
+        }
+        .device i {
+            font-size: 40px;
+        }
+        .device.allowed {
+            color: #28a745;
+        }
+        .device.blocked {
+            color: #dc3545;
+            position: relative;
+        }
+        .device.blocked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 2px;
+            background-color: #dc3545;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        .device.blocked::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 2px;
+            background-color: #dc3545;
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        .device p {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                margin: 20px auto;
+            }
+            .message-box {
+                padding: 20px 15px;
+            }
+            .icon {
+                font-size: 60px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            p {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modern-navbar">
+        <div class="navbar-brand">
+            <img src="/assets/images/pragati_icon.png" alt="Pragati Logo" class="navbar-logo">
+            <h1 class="navbar-title">Student Portal</h1>
+        </div>
+        <div class="navbar-menu">
+            <div class="navbar-username">
+                <i class="fas fa-user-graduate"></i>
+                Welcome, <%= user.firstName %> <%= user.lastName %>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="message-box">
+            <div class="icon">
+                <i class="fas fa-laptop"></i>
+            </div>
+            <h1>Desktop Device Required</h1>
+            <p><%= message || 'This quiz can only be taken on a desktop computer or laptop.' %></p>
+            
+            <div class="device-illustration">
+                <div class="device blocked">
+                    <i class="fas fa-mobile-alt"></i>
+                    <p>Mobile Not Allowed</p>
+                </div>
+                <div class="device blocked">
+                    <i class="fas fa-tablet-alt"></i>
+                    <p>Tablet Not Allowed</p>
+                </div>
+                <div class="device allowed">
+                    <i class="fas fa-laptop"></i>
+                    <p>Laptop Allowed</p>
+                </div>
+                <div class="device allowed">
+                    <i class="fas fa-desktop"></i>
+                    <p>Desktop Allowed</p>
+                </div>
+            </div>
+            
+            <p>Please log in from a desktop computer or laptop to access this quiz.</p>
+            <a href="/studentDashboard" class="back-button">Return to Dashboard</a>
+        </div>
+    </div>
+
+    <script src="/assets/js/modern-navbar.js"></script>
+</body>
+</html> 

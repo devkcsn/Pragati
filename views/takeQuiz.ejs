@@ -289,9 +289,20 @@
         let multiFaceDetected = false;
         let multiFaceStartTime = null;
         let multiFaceWarningSent = false;
+        let isMobileDevice = false; // Flag to track if user is on a mobile device
         
         // Start everything when page loads
         document.addEventListener('DOMContentLoaded', () => {
+            // Check if user is on a mobile device
+            detectMobileDevice();
+            
+            // If mobile device, show blocking message and prevent quiz access
+            if (isMobileDevice) {
+                showMobileBlockingMessage();
+                return; // Stop further initialization
+            }
+            
+            // Continue with normal initialization for desktop users
             // Initially hide the fullscreen indicator
             document.getElementById('fullscreen-indicator').style.display = 'none';
             
@@ -317,7 +328,8 @@
             // Detect DevTools opening
             window.addEventListener('devtoolschange', handleDevToolsChange);
             setupDevToolsDetection();
-              // Set up form submission
+            
+            // Set up form submission
             document.getElementById('submit-quiz').addEventListener('click', () => submitQuiz(false));
         });
         
@@ -1594,6 +1606,79 @@
             console.error("Error submitting quiz silently:", error);
             return false;  // Failure
         }
+    }
+
+    // Function to detect mobile devices
+    function detectMobileDevice() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i;
+        isMobileDevice = mobileRegex.test(userAgent);
+        
+        // Also check screen size as a secondary indicator
+        if (window.innerWidth <= 768 || window.innerHeight <= 600) {
+            isMobileDevice = true;
+        }
+        
+        return isMobileDevice;
+    }
+
+    // Function to display mobile blocking message
+    function showMobileBlockingMessage() {
+        // Create blocking overlay
+        const blockingOverlay = document.createElement('div');
+        blockingOverlay.id = 'mobile-blocking-overlay';
+        blockingOverlay.style.position = 'fixed';
+        blockingOverlay.style.top = '0';
+        blockingOverlay.style.left = '0';
+        blockingOverlay.style.width = '100%';
+        blockingOverlay.style.height = '100%';
+        blockingOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+        blockingOverlay.style.zIndex = '9999';
+        blockingOverlay.style.display = 'flex';
+        blockingOverlay.style.flexDirection = 'column';
+        blockingOverlay.style.justifyContent = 'center';
+        blockingOverlay.style.alignItems = 'center';
+        blockingOverlay.style.textAlign = 'center';
+        blockingOverlay.style.padding = '20px';
+        blockingOverlay.style.boxSizing = 'border-box';
+        
+        // Create content for the overlay
+        const content = `
+            <div style="max-width: 90%; color: white;">
+                <i class="fas fa-laptop" style="font-size: clamp(40px, 8vw, 80px); color: #f8f9fa; margin-bottom: 20px;"></i>
+                <h1 style="font-size: clamp(24px, 6vw, 36px); color: #f8f9fa; margin-bottom: 20px;">Desktop Required</h1>
+                <p style="font-size: clamp(16px, 4vw, 20px); color: #f8f9fa; margin-bottom: 30px;">
+                    This quiz can only be taken on a desktop or laptop computer.
+                </p>
+                <p style="font-size: clamp(14px, 3vw, 18px); color: #f8f9fa; margin-bottom: 30px;">
+                    Please log in from a PC to access this quiz.
+                </p>
+                <div style="margin-top: 20px;">
+                    <a href="/studentDashboard" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
+                        Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        // Set the content and add to body
+        blockingOverlay.innerHTML = content;
+        document.body.appendChild(blockingOverlay);
+        
+        // Hide the main content
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) {
+            mainContent.style.display = 'none';
+        }
+        
+        // Hide the fullscreen modal if it exists
+        const fullscreenModal = document.getElementById('fullscreen-modal');
+        if (fullscreenModal) {
+            fullscreenModal.style.display = 'none';
+        }
+        
+        // Log a message in the console
+        console.log('Quiz access blocked: Mobile device detected. Desktop required.');
     }
     </script>
     <script src="/assets/js/modern-navbar.js"></script>
