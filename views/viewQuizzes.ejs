@@ -792,7 +792,6 @@
                                 <th>Percentage</th>
                                 <th>Date Completed</th>
                                 <th>Status</th>
-                                <th>Violations</th>
                             </tr>
                         </thead>
                         <tbody id="resultsTableBody">
@@ -1228,7 +1227,7 @@
         async function fetchAndShowResults(quizId, quizTitle) {
             try {
                 // Show loading state
-                resultsTableBody.innerHTML = '<tr><td colspan="6" class="loading-row">Loading results...</td></tr>';
+                resultsTableBody.innerHTML = '<tr><td colspan="5" class="loading-row">Loading results...</td></tr>';
                 resultsQuizTitle.textContent = quizTitle;
                 resultsModal.style.display = 'flex';
                 
@@ -1258,19 +1257,6 @@
                     data.attempts.forEach(attempt => {
                         const row = document.createElement('tr');
                         
-                        // Create the violation cell content
-                        let violationCell = '';
-                        if (attempt.violationCount && attempt.violationCount > 0) {
-                            violationCell = `                                <span class="violation-indicator" 
-                                      onclick="showViolationFrames(${quizId}, '${attempt.studentId}', '${attempt.studentName}')">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    ${attempt.violationCount} violations
-                                </span>
-                            `;
-                        } else {
-                            violationCell = 'None';
-                        }
-                        
                         row.innerHTML = `
                             <td>${attempt.studentName}</td>
                             <td>${attempt.score}/${attempt.total_questions}</td>
@@ -1279,7 +1265,6 @@
                             <td>${attempt.auto_submitted ? 
                                 '<span class="auto-submit-tag">Auto-submitted</span>' : 
                                 '<span class="manual-submit-tag">Manual</span>'}</td>
-                            <td>${violationCell}</td>
                         `;
                         resultsTableBody.appendChild(row);
                     });
@@ -1294,7 +1279,7 @@
                 // Show error message
                 resultsTableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="error-row">
+                        <td colspan="5" class="error-row">
                             <i class="fas fa-exclamation-triangle"></i>
                             Failed to load results: ${error.message || 'Unknown error'}
                         </td>
