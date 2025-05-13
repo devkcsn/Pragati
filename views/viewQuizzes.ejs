@@ -1261,9 +1261,8 @@
                         // Create the violation cell content
                         let violationCell = '';
                         if (attempt.violationCount && attempt.violationCount > 0) {
-                            violationCell = `
-                                <span class="violation-indicator" 
-                                      onclick="showViolationFrames(${quizId}, '${attempt.studentId}', '${attempt.sessionId}', '${attempt.studentName}')">
+                            violationCell = `                                <span class="violation-indicator" 
+                                      onclick="showViolationFrames(${quizId}, '${attempt.studentId}', '${attempt.studentName}')">
                                     <i class="fas fa-exclamation-triangle"></i>
                                     ${attempt.violationCount} violations
                                 </span>
@@ -1316,9 +1315,8 @@
             currentViolationFrames = [];
             currentFrameIndex = 0;
         }
-        
-        // Function to fetch and show violation frames
-        async function showViolationFrames(quizId, studentId, sessionId, studentName) {
+          // Function to fetch and show violation frames
+        async function showViolationFrames(quizId, studentId, studentName) {
             try {
                 // Show the frames modal and set student name
                 framesModal.style.display = 'flex';
@@ -1330,7 +1328,7 @@
                 frameCounter.textContent = 'Loading...';
                 
                 // Fetch the violation frames from the server
-                const response = await fetch(`/api/quizzes/${quizId}/violations?studentId=${studentId}&sessionId=${sessionId}`);
+                const response = await fetch(`/api/quizzes/${quizId}/violations?studentId=${studentId}`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch violation frames');

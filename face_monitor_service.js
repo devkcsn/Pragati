@@ -36,8 +36,13 @@ function findAvailablePort() {
  */
 async function initViolationFramesTable() {
     try {
-        const pool = require('../db-pool');
-        const connection = await pool.getConnection();
+        // Create direct connection instead of using db-pool
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME
+        });
         
         try {
             // Check if violations table exists
@@ -67,7 +72,7 @@ async function initViolationFramesTable() {
                 console.log("Created quiz_violation_frames table");
             }
         } finally {
-            connection.release();
+            connection.end();
         }
     } catch (err) {
         console.error("Error initializing violation frames table:", err);
@@ -204,9 +209,13 @@ async function processCapturedViolationFrames(sessionId, sessionData) {
         const summaryData = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
         console.log(`Processing ${summaryData.total_frames} violation frames for session ${sessionId}`);
         
-        // Get database connection
-        const pool = require('../db-pool');
-        const connection = await pool.getConnection();
+        // Create direct connection instead of using db-pool
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME
+        });
         
         try {
             // Process each violation
@@ -245,7 +254,7 @@ async function processCapturedViolationFrames(sessionId, sessionData) {
             
             console.log(`Successfully processed all violation frames for session ${sessionId}`);
         } finally {
-            connection.release();
+            connection.end();
         }
     } catch (error) {
         console.error(`Error processing violation frames for session ${sessionId}:`, error);
