@@ -771,16 +771,9 @@
                     <label for="title">Quiz Title</label>
                     <input type="text" id="title" name="title" class="uniform-input" required placeholder="Enter quiz title">
                 </div>
-                
-                <div class="gemini-wrapper">
-                    <div class="form-group">
-                        <label for="topic">Quiz Topic</label>
-                        <input type="text" id="topic" name="topic" class="uniform-input" placeholder="Enter topic for Gemini to generate questions (e.g., Python basics, World History)">
-                    </div>
-                    <button type="button" id="gemini-btn" class="btn-gemini">
-                        <i class="fas fa-robot"></i> Generate with Gemini
-                    </button>
-                </div>
+                  <button type="button" id="gemini-btn" class="btn-gemini" style="margin-bottom: 24px;">
+                    <i class="fas fa-robot"></i> Generate with Gemini AI
+                </button>
                 
                 <div class="form-group">
                     <label for="description">Description (Optional)</label>
@@ -852,14 +845,13 @@
             
             // Add question button event
             addQuestionBtn.addEventListener('click', addQuestion);
-            
-            // Gemini button event
+              // Gemini button event
             geminiBtn.addEventListener('click', function() {
-                const topic = document.getElementById('topic').value.trim();
-                if (!topic) {
-                    alert('Please enter a topic before using Gemini to generate questions.');
-                    return;
-                }
+                // Reset the form values
+                document.getElementById('topic').value = '';
+                document.getElementById('geminiQuestionCount').value = '5';
+                
+                // Show the modal
                 geminiModal.classList.add('show');
             });
             
@@ -867,16 +859,19 @@
             cancelGeminiBtn.addEventListener('click', function() {
                 geminiModal.classList.remove('show');
             });
-            
-            // Generate with Gemini button
+              // Generate with Gemini button
             generateGeminiBtn.addEventListener('click', async function() {
-                const count = parseInt(geminiQuestionCount.value, 10);
-                if (isNaN(count) || count < 1 || count > 20) {
-                    alert('Please enter a number between 1 and 20.');
+                const topic = document.getElementById('topic').value.trim();
+                if (!topic) {
+                    alert('Please enter a topic for the quiz questions.');
                     return;
                 }
                 
-                const topic = document.getElementById('topic').value.trim();
+                const count = parseInt(geminiQuestionCount.value, 10);
+                if (isNaN(count) || count < 1 || count > 20) {
+                    alert('Please enter a number between 1 and 20 for the number of questions.');
+                    return;
+                }
                 
                 // Show loader and hide buttons
                 geminiLoader.style.display = 'block';
@@ -1221,9 +1216,7 @@
             <h3 class="popup-title">Quiz Created</h3>
             <button class="popup-btn" id="popupOkBtn">OK</button>
         </div>
-    </div>
-
-    <!-- Gemini Modal -->
+    </div>    <!-- Gemini Modal -->
     <div class="gemini-modal-overlay" id="geminiModal">
         <div class="gemini-modal-container">
             <div class="gemini-modal-header">
@@ -1232,9 +1225,13 @@
             </div>
             
             <div class="gemini-modal-body">
-                <p>How many questions would you like Gemini to generate about this topic?</p>
+                <div class="form-group">
+                    <label for="topic">Quiz Topic</label>
+                    <input type="text" id="topic" name="topic" class="uniform-input" placeholder="Enter topic (e.g., Python basics, World History)" required>
+                </div>
                 
                 <div class="form-group">
+                    <label for="geminiQuestionCount">Number of Questions</label>
                     <input type="number" id="geminiQuestionCount" class="uniform-input" value="5" min="1" max="20">
                 </div>
                 
