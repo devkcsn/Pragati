@@ -86,16 +86,13 @@
             outline: none;
             border: none;
         }
-        
-        h3 {
-            position: absolute;
-            top: 20px;
-            left: 70%;
-            transform: translateX(-50%);
+          h3 {
             color: #ffffff;
-            font-size: 24px;
-            font-weight: 600;
-            z-index: 1;
+            font-size: 32px;
+            font-weight: 500;
+            line-height: 42px;
+            text-align: center;
+            margin-bottom: 40px;
         }
         
         label {
@@ -349,14 +346,13 @@
     </style>
 </head>
 <body>    <div class="overlay"></div>
-    
-    <a href="/" class="logo">
+      <a href="/" class="logo">
         <img src="/assets/images/pragati.png" alt="Logo" width="350px" height="150">
     </a>
-    <h3>Coordinator Login</h3>
     
     <div class="container">
         <div class="form-container">
+            <h3>Coordinator Login</h3>
             <form method="POST" action="/loginCoordinator" id="loginForm">
                 <div class="error-message" id="errorMessage"></div>
                 
