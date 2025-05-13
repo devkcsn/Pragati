@@ -539,9 +539,27 @@
             background-color: var(--success-hover);
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        @media (max-width: 768px) {
+        }        @media (max-width: 768px) {
+            .floating-gemini-btn {
+                bottom: 30px;
+                right: 20px;
+                padding: 8px 12px;
+            }
+            
+            .gemini-icon {
+                width: 35px;
+                height: 35px;
+                margin-right: 10px;
+            }
+            
+            .gemini-icon i {
+                font-size: 18px;
+            }
+            
+            .gemini-label {
+                font-size: 13px;
+            }
+            
             .quiz-form {
                 padding: 25px;
             }
@@ -593,37 +611,49 @@
                 margin-bottom: 20px;
             }
         }
-        
-        /* Gemini Button Styles */
-        .gemini-wrapper {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-            margin-bottom: 24px;
-        }
-        
-        .gemini-wrapper .form-group {
-            flex: 1;
-            margin-bottom: 0;
-        }
-        
-        .btn-gemini {
+          /* Floating Gemini Button Styles */
+        .floating-gemini-btn {
+            position: fixed;
+            right: 30px;
+            bottom: 80px;
             background-color: var(--gemini-color);
             color: white;
-            min-height: 48px;
-            margin-bottom: 8px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.5);
+            cursor: pointer;
+            z-index: 999;
             display: flex;
             align-items: center;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+            transform-origin: center;
         }
         
-        .btn-gemini:hover {
+        .floating-gemini-btn:hover {
             background-color: var(--gemini-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(142, 68, 173, 0.3);
+            box-shadow: 0 6px 20px rgba(142, 68, 173, 0.7);
         }
         
-        .btn-gemini i {
-            font-size: 18px;
+        .gemini-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            margin-right: 12px;
+        }
+        
+        .gemini-icon i {
+            font-size: 22px;
+            color: white;
+        }
+        
+        .gemini-label {
+            font-weight: 500;
+            font-size: 15px;
+            white-space: nowrap;
         }
         
         /* Gemini Modal Styles */
@@ -768,12 +798,8 @@
             
             <div class="form-section">
                 <h3>Quiz Details</h3>                <div class="form-group">
-                    <label for="title">Quiz Title</label>
-                    <input type="text" id="title" name="title" class="uniform-input" required placeholder="Enter quiz title">
+                    <label for="title">Quiz Title</label>                    <input type="text" id="title" name="title" class="uniform-input" required placeholder="Enter quiz title">
                 </div>
-                  <button type="button" id="gemini-btn" class="btn-gemini" style="margin-bottom: 24px;">
-                    <i class="fas fa-robot"></i> Generate with Gemini AI
-                </button>
                 
                 <div class="form-group">
                     <label for="description">Description (Optional)</label>
@@ -1218,10 +1244,9 @@
         </div>
     </div>    <!-- Gemini Modal -->
     <div class="gemini-modal-overlay" id="geminiModal">
-        <div class="gemini-modal-container">
-            <div class="gemini-modal-header">
-                <i class="fas fa-robot"></i>
-                <h3>Generate Quiz with Gemini</h3>
+        <div class="gemini-modal-container">            <div class="gemini-modal-header">
+                <i class="fas fa-brain"></i>
+                <h3>Generate Quiz with Gemini AI</h3>
             </div>
             
             <div class="gemini-modal-body">
@@ -1278,9 +1303,77 @@
                 // Redirect after animation completes
                 setTimeout(() => {
                     window.location.href = '/coordinatorDashboard';
-                }, 300);
-            });        }
+                }, 300);            });        }
     </script>    <script src="/assets/js/modern-navbar.js"></script>
     <script src="/assets/js/navbar-fix.js"></script>
+    
+    <!-- Floating Gemini AI button -->
+    <div class="floating-gemini-btn" id="gemini-btn">
+        <div class="gemini-icon">
+            <i class="fas fa-brain"></i>
+        </div>
+        <div class="gemini-label">Generate with Gemini AI</div>
+    </div>
+      <script>
+        // GSAP animation for the floating Gemini button
+        document.addEventListener('DOMContentLoaded', function() {
+            const geminiBtn = document.getElementById('gemini-btn');
+            const geminiIcon = geminiBtn.querySelector('.gemini-icon');
+            
+            // Initial animation
+            gsap.from(geminiBtn, {
+                x: 100,
+                opacity: 0,
+                duration: 1,
+                ease: "elastic.out(1, 0.5)"
+            });
+            
+            // Continuous subtle floating animation
+            gsap.to(geminiBtn, {
+                y: "-8px", 
+                duration: 1.5,
+                yoyo: true,
+                repeat: -1,
+                ease: "power1.inOut"
+            });
+            
+            // Pulse animation for the icon
+            gsap.to(geminiIcon, {
+                boxShadow: "0 0 15px rgba(255, 255, 255, 0.7)",
+                scale: 1.05,
+                duration: 1.2,
+                yoyo: true,
+                repeat: -1,
+                ease: "sine.inOut"
+            });
+            
+            // Enhanced hover animation
+            geminiBtn.addEventListener('mouseenter', () => {
+                gsap.to(geminiBtn, {
+                    scale: 1.1,
+                    duration: 0.3,
+                    ease: "power1.out"
+                });
+                
+                gsap.to(geminiIcon, {
+                    backgroundColor: "rgba(255, 255, 255, 0.3)",
+                    duration: 0.3
+                });
+            });
+            
+            geminiBtn.addEventListener('mouseleave', () => {
+                gsap.to(geminiBtn, {
+                    scale: 1,
+                    duration: 0.3,
+                    ease: "power1.out"
+                });
+                
+                gsap.to(geminiIcon, {
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    duration: 0.3
+                });
+            });
+        });
+    </script>
 </body>
 </html>
