@@ -264,8 +264,8 @@
                 font-size: 16px; /* Minimum font size to prevent zoom on iOS */
             }
         }
-          /* Responsive Design */
-        @media (max-width: 800px) {
+          /* Responsive Design */        /* Responsive text sizing for mobile */
+        @media (max-width: 850px) {
             .container {
                 width: 90%;
                 flex-direction: column;
@@ -288,9 +288,9 @@
             
             h3 {
                 position: relative;
-                top: 20px;
-                left: 50%;
-                margin-bottom: 20px;
+                margin-bottom: 30px;
+                font-size: 30px;
+                line-height: 40px;
                 z-index: 2;
             }
             
@@ -300,8 +300,32 @@
             }
         }
         
+        @media (max-width: 600px) {
+            h3 {
+                font-size: 28px;
+                line-height: 36px;
+                margin-bottom: 25px;
+            }
+            
+            .container {
+                width: 92%;
+                border-radius: 30px;
+                top: 52%;
+            }
+            
+            .form-container {
+                padding: 28px 22px;
+            }
+        }
+        
         /* Additional mobile optimizations */
         @media (max-width: 480px) {
+            h3 {
+                font-size: 24px;
+                line-height: 32px;
+                margin-bottom: 20px;
+            }
+            
             .container {
                 width: 95%;
                 border-radius: 25px;
@@ -341,6 +365,28 @@
             /* Improve form spacing for mobile */
             .register-link {
                 margin-top: 15px;
+            }
+        }
+        
+        /* Handle landscape orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container {
+                height: 90vh;
+                top: 50%;
+            }
+            
+            h3 {
+                font-size: 24px;
+                line-height: 30px;
+                margin-bottom: 15px;
+            }
+            
+            .logo {
+                top: 10px;
+            }
+            
+            .logo img {
+                max-width: 150px;
             }
         }
     </style>

@@ -422,12 +422,11 @@
             .image-container {
                 display: none;
             }
-            
-            h3 {
+              h3 {
                 position: relative;
-                top: 20px;
-                left: 50%;
-                margin-bottom: 20px;
+                margin-bottom: 30px;
+                font-size: 30px;
+                line-height: 40px;
                 z-index: 2;
             }
             
@@ -436,9 +435,14 @@
                 height: auto;
             }
         }
-        
-        /* Additional mobile optimizations */
+          /* Additional mobile optimizations */
         @media (max-width: 600px) {
+            h3 {
+                font-size: 28px;
+                line-height: 36px;
+                margin-bottom: 25px;
+            }
+            
             .container {
                 width: 95%;
                 border-radius: 25px;
@@ -503,9 +507,10 @@
             .form-container {
                 height: 680px;
             }
-            
-            h3 {
-                font-size: 22px;
+              h3 {
+                font-size: 24px;
+                line-height: 32px;
+                margin-bottom: 20px;
             }
             
             /* Better input focus handling on mobile */
@@ -514,10 +519,36 @@
                 box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
                 font-size: 16px; /* Prevent iOS zoom on input focus */
             }
-            
-            /* Fix for iOS zooming */
+              /* Fix for iOS zooming */
             input, select, textarea, .custom-select-trigger {
                 font-size: 16px; /* Minimum font size to prevent zoom on iOS */
+            }
+        }
+        
+        /* Handle landscape orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container {
+                height: 90vh;
+                top: 50%;
+            }
+            
+            h3 {
+                font-size: 24px;
+                line-height: 30px;
+                margin-bottom: 15px;
+            }
+            
+            .logo {
+                top: 10px;
+            }
+            
+            .logo img {
+                max-width: 150px;
+            }
+            
+            .form-container {
+                height: auto;
+                padding-bottom: 15px;
             }
         }
     </style>
