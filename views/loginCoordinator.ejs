@@ -42,7 +42,9 @@
         .logo {
             position: absolute;
             z-index: 1;
-        }
+            touch-action: manipulation; /* Ensures better performance for touch interactions */
+        }/* Main container - MODIFIED POSITIONING */
+        
         
         /* Container Layout */
         .container {
@@ -294,6 +296,14 @@
                 z-index: 2;
             }
             
+            .logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                top: 20px;
+                text-align: center;
+            }
+            
             .logo img {
                 width: 250px;
                 height: auto;
@@ -344,6 +354,10 @@
                 font-size: 16px;
             }
             
+            .logo {
+                top: 15px;
+            }
+            
             .logo img {
                 width: 200px;
             }
@@ -383,6 +397,8 @@
             
             .logo {
                 top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
             }
             
             .logo img {

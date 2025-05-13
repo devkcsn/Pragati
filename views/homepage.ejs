@@ -410,12 +410,20 @@
                 right: -100%;
             }
             
+            .logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                top: 20px;
+                text-align: center;
+            }
+            
             .logo img {
                 max-width: 200px;
                 height: auto;
             }
-        }        /* Additional mobile optimizations for very small screens */
-        @media (max-width: 480px) {
+        }
+          @media (max-width: 480px) {
             .container {
                 width: 95%;
                 border-radius: 25px;
@@ -440,6 +448,10 @@
             .register-button {
                 height: 45px;
                 font-size: 16px;
+            }
+            
+            .logo {
+                top: 15px;
             }
             
             .logo img {
@@ -491,6 +503,8 @@
             
             .logo {
                 top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
             }
             
             .logo img {
