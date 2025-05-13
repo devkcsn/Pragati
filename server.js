@@ -18,6 +18,9 @@ const path = require('path');             // File path utilities
 const fs = require('fs');                 // File system operations
 require('dotenv').config();               // Environment variable configuration
 
+// Import custom route modules
+const geminiRoutes = require('./routes/geminiRoutes');
+
 // Middleware setup
 app.use(cors());                              // Enable CORS for all routes
 app.use(express.static('public'));            // Serve static files from 'public' directory
@@ -58,6 +61,9 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000   // Cookie expires after 24 hours
     }
 }));
+
+// Register API routes
+app.use('/api/gemini', geminiRoutes);
 
 /**
  * MySQL Database Connection Pool

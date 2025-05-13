@@ -36,6 +36,8 @@
             --text-color: #2d3436;
             --text-secondary: #636e72;
             --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --gemini-color: #8e44ad;
+            --gemini-hover: #7d3c98;
         }
         
         body {
@@ -591,6 +593,143 @@
                 margin-bottom: 20px;
             }
         }
+        
+        /* Gemini Button Styles */
+        .gemini-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 24px;
+        }
+        
+        .gemini-wrapper .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .btn-gemini {
+            background-color: var(--gemini-color);
+            color: white;
+            min-height: 48px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .btn-gemini:hover {
+            background-color: var(--gemini-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(142, 68, 173, 0.3);
+        }
+        
+        .btn-gemini i {
+            font-size: 18px;
+        }
+        
+        /* Gemini Modal Styles */
+        .gemini-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .gemini-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .gemini-modal-container {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.4s, opacity 0.4s;
+        }
+        
+        .gemini-modal-overlay.show .gemini-modal-container {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .gemini-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .gemini-modal-header i {
+            font-size: 28px;
+            color: var(--gemini-color);
+            margin-right: 10px;
+        }
+        
+        .gemini-modal-header h3 {
+            color: var(--gemini-color);
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        .gemini-modal-body {
+            margin-bottom: 30px;
+        }
+        
+        .gemini-modal-body p {
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+        
+        .gemini-modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .gemini-loader {
+            display: none;
+            text-align: center;
+            margin: 20px auto;
+        }
+        
+        .gemini-loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(142, 68, 173, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--gemini-color);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            color: var(--text-color);
+        }
+        
+        /* Existing styles follow... */
     </style>
 </head>
 <body>    <div class="modern-navbar">
@@ -633,12 +772,22 @@
                     <input type="text" id="title" name="title" class="uniform-input" required placeholder="Enter quiz title">
                 </div>
                 
+                <div class="gemini-wrapper">
+                    <div class="form-group">
+                        <label for="topic">Quiz Topic</label>
+                        <input type="text" id="topic" name="topic" class="uniform-input" placeholder="Enter topic for Gemini to generate questions (e.g., Python basics, World History)">
+                    </div>
+                    <button type="button" id="gemini-btn" class="btn-gemini">
+                        <i class="fas fa-robot"></i> Generate with Gemini
+                    </button>
+                </div>
+                
                 <div class="form-group">
                     <label for="description">Description (Optional)</label>
                     <textarea id="description" name="description" class="uniform-input" placeholder="Enter a brief description of the quiz"></textarea>
                 </div>
                 
-                <div class="date-time-flex">                    <div class="form-group">
+                <div class="date-time-flex"><div class="form-group">
                         <label for="scheduledDate">Start Date and Time</label>
                         <input type="datetime-local" id="scheduledDate" name="scheduledDate" class="uniform-input">
                         <div class="help-text">When the quiz becomes available to students (defaults to now if blank)</div>
@@ -676,15 +825,19 @@
                 </button>
             </div>
         </form>
-    </div>
-
-    <script>
+    </div>    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const quizForm = document.getElementById('quizForm');
             const addQuestionBtn = document.getElementById('add-question-btn');
             const questionsContainer = document.getElementById('questions-container');
             const scheduledDateInput = document.getElementById('scheduledDate');
             const deadlineDateInput = document.getElementById('deadlineDate');
+            const geminiBtn = document.getElementById('gemini-btn');
+            const geminiModal = document.getElementById('geminiModal');
+            const generateGeminiBtn = document.getElementById('generateGeminiBtn');
+            const cancelGeminiBtn = document.getElementById('cancelGeminiBtn');
+            const geminiQuestionCount = document.getElementById('geminiQuestionCount');
+            const geminiLoader = document.getElementById('geminiLoader');
             
             let questionCount = 0;
             
@@ -699,6 +852,81 @@
             
             // Add question button event
             addQuestionBtn.addEventListener('click', addQuestion);
+            
+            // Gemini button event
+            geminiBtn.addEventListener('click', function() {
+                const topic = document.getElementById('topic').value.trim();
+                if (!topic) {
+                    alert('Please enter a topic before using Gemini to generate questions.');
+                    return;
+                }
+                geminiModal.classList.add('show');
+            });
+            
+            // Cancel Gemini button
+            cancelGeminiBtn.addEventListener('click', function() {
+                geminiModal.classList.remove('show');
+            });
+            
+            // Generate with Gemini button
+            generateGeminiBtn.addEventListener('click', async function() {
+                const count = parseInt(geminiQuestionCount.value, 10);
+                if (isNaN(count) || count < 1 || count > 20) {
+                    alert('Please enter a number between 1 and 20.');
+                    return;
+                }
+                
+                const topic = document.getElementById('topic').value.trim();
+                
+                // Show loader and hide buttons
+                geminiLoader.style.display = 'block';
+                geminiModal.querySelector('.gemini-modal-buttons').style.display = 'none';
+                
+                try {
+                    // Call the API endpoint to get Gemini-generated questions
+                    const response = await fetch('/api/gemini/generate-quiz', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            topic: topic,
+                            questionCount: count
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.questions) {
+                        // Clear existing questions
+                        questionsContainer.innerHTML = '';
+                        questionCount = 0;
+                        
+                        // Add Gemini-generated questions
+                        data.questions.forEach(question => {
+                            // Add question
+                            addGeminiQuestion(question);
+                        });
+                        
+                        // Hide modal
+                        geminiModal.classList.remove('show');
+                    } else {
+                        throw new Error(data.message || 'Failed to generate questions');
+                    }                } catch (err) {
+                    console.error('Error generating questions:', err);
+                    
+                    // Check for API key error
+                    if (err.message && err.message.includes('API_KEY_INVALID')) {
+                        alert('The Gemini AI service is not properly configured. Please contact the administrator to set up a valid API key.');
+                    } else {
+                        alert('Failed to generate questions. Please try again later.');
+                    }
+                } finally {
+                    // Hide loader and show buttons
+                    geminiLoader.style.display = 'none';
+                    geminiModal.querySelector('.gemini-modal-buttons').style.display = 'flex';
+                }
+            });
             
             // Validate deadline is after scheduled date
             scheduledDateInput.addEventListener('change', validateDates);
@@ -896,6 +1124,94 @@
                 
                 return true;
             }
+            
+            // Function to add a Gemini-generated question
+            function addGeminiQuestion(question) {
+                questionCount++;
+                
+                const questionBox = document.createElement('div');
+                questionBox.className = 'question-box';
+                questionBox.innerHTML = `
+                    <div class="question-number">${questionCount}</div>
+                    <button type="button" class="remove-question">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="form-group">
+                        <label>Question Text</label>
+                        <input type="text" class="question-text uniform-input" required value="${escapeHtml(question.text)}">
+                    </div>
+                    
+                    <div class="options-container">
+                        <label>Answer Options</label>
+                    </div>
+                    
+                    <button type="button" class="add-option btn-small btn-secondary">
+                        <i class="fas fa-plus"></i> Add Option
+                    </button>
+                `;
+                
+                questionsContainer.appendChild(questionBox);
+                
+                // Add event listeners for this question
+                const addOptionBtn = questionBox.querySelector('.add-option');
+                const removeQuestionBtn = questionBox.querySelector('.remove-question');
+                const optionsContainer = questionBox.querySelector('.options-container');
+                
+                // Add the options from Gemini
+                question.options.forEach((option, index) => {
+                    addGeminiOption(optionsContainer, questionCount, option.text, option.isCorrect);
+                });
+                
+                // Add event listeners
+                addOptionBtn.addEventListener('click', function() {
+                    addOption(optionsContainer, questionCount);
+                });
+                
+                removeQuestionBtn.addEventListener('click', function() {
+                    if (document.querySelectorAll('.question-box').length > 1) {
+                        questionBox.remove();
+                        renumberQuestions();
+                    } else {
+                        alert('You must have at least one question');
+                    }
+                });
+            }
+            
+            // Function to add a Gemini-generated option
+            function addGeminiOption(container, questionId, optionText, isCorrect) {
+                const optionGroup = document.createElement('div');
+                optionGroup.className = 'option-group';
+                optionGroup.innerHTML = `
+                    <input type="text" class="option-text uniform-input" required value="${escapeHtml(optionText)}">
+                    <label class="radio-label">
+                        <input type="radio" name="correct-${questionId}" class="option-correct" ${isCorrect ? 'checked' : ''}>
+                        Correct
+                    </label>
+                    <button type="button" class="remove-option btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                
+                container.appendChild(optionGroup);
+                
+                // Add event listener for removing this option
+                const removeOptionBtn = optionGroup.querySelector('.remove-option');
+                removeOptionBtn.addEventListener('click', function() {
+                    const optionCount = container.querySelectorAll('.option-group').length;
+                    if (optionCount > 2) {
+                        optionGroup.remove();
+                    } else {
+                        alert('Each question must have at least two options');
+                    }
+                });
+            }
+            
+            // Helper function to escape HTML characters
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
         });    </script>    <!-- Success Popup -->
     <div class="popup-overlay" id="successPopup">
         <div class="popup-container">
@@ -905,7 +1221,40 @@
             <h3 class="popup-title">Quiz Created</h3>
             <button class="popup-btn" id="popupOkBtn">OK</button>
         </div>
-    </div><script>
+    </div>
+
+    <!-- Gemini Modal -->
+    <div class="gemini-modal-overlay" id="geminiModal">
+        <div class="gemini-modal-container">
+            <div class="gemini-modal-header">
+                <i class="fas fa-robot"></i>
+                <h3>Generate Quiz with Gemini</h3>
+            </div>
+            
+            <div class="gemini-modal-body">
+                <p>How many questions would you like Gemini to generate about this topic?</p>
+                
+                <div class="form-group">
+                    <input type="number" id="geminiQuestionCount" class="uniform-input" value="5" min="1" max="20">
+                </div>
+                
+                <div class="gemini-loader" id="geminiLoader">
+                    <div class="gemini-loader-spinner"></div>
+                    <p>Generating questions with Gemini AI...</p>
+                </div>
+            </div>
+            
+            <div class="gemini-modal-buttons">
+                <button type="button" id="cancelGeminiBtn" class="btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" id="generateGeminiBtn" class="btn-primary">
+                    <i class="fas fa-magic"></i> Generate
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
         // Function to show the success popup
         function showSuccessPopup() {
             const popup = document.getElementById('successPopup');
