@@ -526,28 +526,33 @@
         violationWarning.style.zIndex = '3000';
         violationWarning.style.textAlign = 'center';
         violationWarning.style.padding = '20px';
+        violationWarning.style.boxSizing = 'border-box';
         
         // Create warning content
         const warningIcon = document.createElement('div');
-        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>';
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(40px, 8vw, 80px); margin-bottom: 20px;"></i>';
         
         const warningTitle = document.createElement('h1');
         warningTitle.textContent = 'EXAM VIOLATION DETECTED';
-        warningTitle.style.fontSize = '36px';
+        warningTitle.style.fontSize = 'clamp(20px, 6vw, 36px)';
         warningTitle.style.marginBottom = '20px';
+        warningTitle.style.padding = '0 10px';
         
         const warningMessage = document.createElement('p');
         warningMessage.textContent = 'You have exited fullscreen mode. This is a violation of exam rules.';
-        warningMessage.style.fontSize = '24px';
+        warningMessage.style.fontSize = 'clamp(16px, 4vw, 24px)';
         warningMessage.style.marginBottom = '20px';
+        warningMessage.style.padding = '0 10px';
         
         const warningSubmitting = document.createElement('p');
         warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
-        warningSubmitting.style.fontSize = '20px';
+        warningSubmitting.style.fontSize = 'clamp(14px, 3.5vw, 20px)';
         warningSubmitting.style.marginBottom = '30px';
-          const redirectMessage = document.createElement('p');
+        warningSubmitting.style.padding = '0 10px';
+        
+        const redirectMessage = document.createElement('p');
         redirectMessage.textContent = 'Redirecting to dashboard...';
-        redirectMessage.style.fontSize = '16px';
+        redirectMessage.style.fontSize = 'clamp(12px, 3vw, 16px)';
         redirectMessage.style.marginBottom = '10px';
         
         // Add elements to warning
@@ -556,9 +561,7 @@
         violationWarning.appendChild(warningMessage);
         violationWarning.appendChild(warningSubmitting);
         violationWarning.appendChild(redirectMessage);
-        redirectMessage.style.marginBottom = '10px';
         
-        // Add elements to warning
         document.body.appendChild(violationWarning);
         
         // Submit quiz and then redirect directly
@@ -588,38 +591,41 @@
         violationWarning.style.zIndex = '3000';
         violationWarning.style.textAlign = 'center';
         violationWarning.style.padding = '20px';
+        violationWarning.style.boxSizing = 'border-box';
         
         // Create warning content
         const warningIcon = document.createElement('div');
-        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>';
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(40px, 8vw, 80px); margin-bottom: 20px;"></i>';
         
         const warningTitle = document.createElement('h1');
         warningTitle.textContent = 'EXAM VIOLATION DETECTED';
-        warningTitle.style.fontSize = '36px';
+        warningTitle.style.fontSize = 'clamp(20px, 6vw, 36px)';
         warningTitle.style.marginBottom = '20px';
+        warningTitle.style.padding = '0 10px';
         
         const warningMessage = document.createElement('p');
         warningMessage.textContent = 'You have been looking away for too long. This is a violation of exam rules.';
-        warningMessage.style.fontSize = '24px';
+        warningMessage.style.fontSize = 'clamp(16px, 4vw, 24px)';
         warningMessage.style.marginBottom = '20px';
+        warningMessage.style.padding = '0 10px';
         
         const warningSubmitting = document.createElement('p');
         warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
-        warningSubmitting.style.fontSize = '20px';
+        warningSubmitting.style.fontSize = 'clamp(14px, 3.5vw, 20px)';
         warningSubmitting.style.marginBottom = '30px';
+        warningSubmitting.style.padding = '0 10px';
+        
+        // Create redirect message
+        const redirectMessage = document.createElement('p');
+        redirectMessage.textContent = 'Redirecting to dashboard...';
+        redirectMessage.style.fontSize = 'clamp(12px, 3vw, 16px)';
+        redirectMessage.style.marginBottom = '10px';
         
         // Add elements to warning
         violationWarning.appendChild(warningIcon);
         violationWarning.appendChild(warningTitle);
         violationWarning.appendChild(warningMessage);
         violationWarning.appendChild(warningSubmitting);
-          // Create redirect message
-        const redirectMessage = document.createElement('p');
-        redirectMessage.textContent = 'Redirecting to dashboard...';
-        redirectMessage.style.fontSize = '16px';
-        redirectMessage.style.marginBottom = '10px';
-        
-        // Add elements to warning
         violationWarning.appendChild(redirectMessage);
         document.body.appendChild(violationWarning);
         
@@ -777,14 +783,15 @@
                         violationWarning.style.zIndex = '3000';
                         violationWarning.style.textAlign = 'center';
                         violationWarning.style.padding = '20px';
+                        violationWarning.style.boxSizing = 'border-box';
                         
                         // Warning content
                         violationWarning.innerHTML = `
-                            <i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>
-                            <h1 style="font-size: 36px; margin-bottom: 20px;">EXAM VIOLATION DETECTED</h1>
-                            <p style="font-size: 24px; margin-bottom: 20px;">You've left the quiz window multiple times.</p>
-                            <p style="font-size: 20px; margin-bottom: 30px;">Your exam is being submitted and this attempt will be recorded as a security violation.</p>
-                            <p style="font-size: 16px; margin-bottom: 10px;">Redirecting to dashboard...</p>
+                            <i class="fas fa-exclamation-triangle" style="font-size: clamp(40px, 8vw, 80px); margin-bottom: 20px;"></i>
+                            <h1 style="font-size: clamp(20px, 6vw, 36px); margin-bottom: 20px; padding: 0 10px;">EXAM VIOLATION DETECTED</h1>
+                            <p style="font-size: clamp(16px, 4vw, 24px); margin-bottom: 20px; padding: 0 10px;">You've left the quiz window multiple times.</p>
+                            <p style="font-size: clamp(14px, 3.5vw, 20px); margin-bottom: 30px; padding: 0 10px;">Your exam is being submitted and this attempt will be recorded as a security violation.</p>
+                            <p style="font-size: clamp(12px, 3vw, 16px); margin-bottom: 10px;">Redirecting to dashboard...</p>
                         `;
                         
                         document.body.appendChild(violationWarning);
@@ -1159,18 +1166,20 @@
                 warningElement.style.transform = 'translate(-50%, -50%)';
                 warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
                 warningElement.style.color = 'white';
-                warningElement.style.padding = '20px 30px';
+                warningElement.style.padding = '20px';
                 warningElement.style.borderRadius = '8px';
                 warningElement.style.zIndex = '2000';
                 warningElement.style.fontWeight = 'bold';
                 warningElement.style.textAlign = 'center';
                 warningElement.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+                warningElement.style.maxWidth = '90%';
+                warningElement.style.width = 'min(400px, 90%)';
                 
                 // Set appropriate warning based on type
                 if (warningType === 'looking-away') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
                 } else if (warningType === 'multiple-faces') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
                 }
                 
                 document.body.appendChild(warningElement);
@@ -1179,9 +1188,9 @@
                 warningElement.style.display = 'block';
                 
                 if (warningType === 'looking-away') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
                 } else if (warningType === 'multiple-faces') {
-                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
+                    warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(24px, 6vw, 36px); margin-bottom: 15px; display: block;"></i>MULTIPLE FACES DETECTED<br><span id="away-timer" style="font-size: clamp(18px, 5vw, 24px); display: block; margin: 10px 0;">0</span> seconds<br>Only one person should be visible!';
                 }
             }
         }
@@ -1374,11 +1383,11 @@
                         
                         // Warning content
                         violationWarning.innerHTML = `
-                            <i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>
-                            <h1 style="font-size: 36px; margin-bottom: 20px;">EXAM VIOLATION DETECTED</h1>
-                            <p style="font-size: 24px; margin-bottom: 20px;">You've violated exam policies multiple times.</p>
-                            <p style="font-size: 20px; margin-bottom: 30px;">Your exam is being submitted and this attempt will be recorded as a security violation.</p>
-                            <p style="font-size: 16px; margin-bottom: 10px;">Redirecting to dashboard...</p>
+                            <i class="fas fa-exclamation-triangle" style="font-size: clamp(40px, 8vw, 80px); margin-bottom: 20px;"></i>
+                            <h1 style="font-size: clamp(20px, 6vw, 36px); margin-bottom: 20px; padding: 0 10px;">EXAM VIOLATION DETECTED</h1>
+                            <p style="font-size: clamp(16px, 4vw, 24px); margin-bottom: 20px; padding: 0 10px;">You've violated exam policies multiple times.</p>
+                            <p style="font-size: clamp(14px, 3.5vw, 20px); margin-bottom: 30px; padding: 0 10px;">Your exam is being submitted and this attempt will be recorded as a security violation.</p>
+                            <p style="font-size: clamp(12px, 3vw, 16px); margin-bottom: 10px;">Redirecting to dashboard...</p>
                         `;
                         
                         document.body.appendChild(violationWarning);
@@ -1472,30 +1481,34 @@
         violationWarning.style.zIndex = '3000';
         violationWarning.style.textAlign = 'center';
         violationWarning.style.padding = '20px';
+        violationWarning.style.boxSizing = 'border-box';
         
         // Create warning content
         const warningIcon = document.createElement('div');
-        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 80px; margin-bottom: 30px;"></i>';
+        warningIcon.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: clamp(40px, 8vw, 80px); margin-bottom: 20px;"></i>';
         
         const warningTitle = document.createElement('h1');
         warningTitle.textContent = 'EXAM VIOLATION DETECTED';
-        warningTitle.style.fontSize = '36px';
+        warningTitle.style.fontSize = 'clamp(20px, 6vw, 36px)';
         warningTitle.style.marginBottom = '20px';
+        warningTitle.style.padding = '0 10px';
         
         const warningMessage = document.createElement('p');
         warningMessage.textContent = 'Multiple faces have been detected. This is a violation of exam rules.';
-        warningMessage.style.fontSize = '24px';
+        warningMessage.style.fontSize = 'clamp(16px, 4vw, 24px)';
         warningMessage.style.marginBottom = '20px';
+        warningMessage.style.padding = '0 10px';
         
         const warningSubmitting = document.createElement('p');
         warningSubmitting.textContent = 'Your exam is being submitted and this attempt will be recorded as a security violation.';
-        warningSubmitting.style.fontSize = '20px';
+        warningSubmitting.style.fontSize = 'clamp(14px, 3.5vw, 20px)';
         warningSubmitting.style.marginBottom = '30px';
+        warningSubmitting.style.padding = '0 10px';
         
         // Create redirect message
         const redirectMessage = document.createElement('p');
         redirectMessage.textContent = 'Redirecting to dashboard...';
-        redirectMessage.style.fontSize = '16px';
+        redirectMessage.style.fontSize = 'clamp(12px, 3vw, 16px)';
         redirectMessage.style.marginBottom = '10px';
         
         // Add elements to warning
