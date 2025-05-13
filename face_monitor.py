@@ -10,6 +10,7 @@ import argparse
 import sys
 import os
 from datetime import datetime
+import requests
 
 class FaceMonitor:
     def __init__(self, warning_threshold=8, early_warning_threshold=4):  # Added early warning threshold
@@ -64,29 +65,71 @@ class FaceMonitor:
         os.makedirs(self.frames_folder, exist_ok=True)
         
     def capture_violation_frames(self, frame, violation_type):
-        """Capture frames for a violation event"""
+        """Capture frames for a violation event and send to database"""
         try:
             # Generate timestamp
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
-            # Create violation subfolder if needed
-            violation_folder = os.path.join(self.frames_folder, f"{self.session_id}")
-            os.makedirs(violation_folder, exist_ok=True)
+            # Get ISO format timestamp for database
+            iso_timestamp = datetime.now().isoformat()
             
-            # Save the frame
-            filename = f"{violation_folder}/violation_{violation_type}_{timestamp}.jpg"
-            cv2.imwrite(filename, frame)
-            
-            # Add frame info to the collection
+            # Encode the frame for sending to server
             encoded_frame = self.encode_frame_to_base64(frame)
+            
+            # Create payload for API request
+            payload = {
+                "quiz_id": self.quiz_id,
+                "student_username": self.student_id,
+                "violation_type": violation_type,
+                "frame_data": encoded_frame,
+                "timestamp": iso_timestamp
+            }
+            
+            # Send frame to server API endpoint
+            try:
+                # Send the API request to store frame in database
+                response = requests.post(
+                    'http://localhost:3000/api/quiz/store-violation-frame',
+                    json=payload
+                )
+                
+                if response.status_code == 200:
+                    print(f"Successfully sent violation frame to database: {violation_type}")
+                else:
+                    print(f"Failed to send frame to database. Status: {response.status_code}, Response: {response.text}")
+                    
+                    # Fallback: Create folder and save to file if database store fails
+                    violation_folder = os.path.join(self.frames_folder, f"{self.session_id}")
+                    os.makedirs(violation_folder, exist_ok=True)
+                    
+                    # Save the frame locally as a backup
+                    filename = f"{violation_folder}/violation_{violation_type}_{timestamp}.jpg"
+                    cv2.imwrite(filename, frame)
+                    print(f"Saved backup frame to file: {filename}")
+            except Exception as e:
+                print(f"Error sending frame to API: {e}")
+                
+                # Fallback: Create folder and save to file if API call fails
+                violation_folder = os.path.join(self.frames_folder, f"{self.session_id}")
+                os.makedirs(violation_folder, exist_ok=True)
+                
+                # Save the frame locally as a backup
+                filename = f"{violation_folder}/violation_{violation_type}_{timestamp}.jpg"
+                cv2.imwrite(filename, frame)
+                print(f"Saved backup frame to file: {filename}")
+            
+            # Add frame info to the local collection (for websocket feedback)
             self.violation_frames.append({
                 "timestamp": timestamp,
                 "type": violation_type,
                 "image": encoded_frame,
                 "session_id": self.session_id,
+                "quiz_id": self.quiz_id,
+                "student_id": self.student_id
             })
             
-            print(f"Captured violation frame: {filename}")
+            self.frames_captured = True
+            print(f"Captured violation frame at {timestamp}")
             return True
         except Exception as e:
             print(f"Error capturing violation frame: {e}")

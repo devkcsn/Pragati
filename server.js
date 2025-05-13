@@ -235,6 +235,145 @@ app.get('/api/check-availability', async (req, res) => {
     }
 });
 
+/**
+ * Store Quiz Violation Frame API Endpoint
+ * 
+ * This endpoint receives webcam violation frames and stores them in the database.
+ * It accepts quiz_id, student_username, violation_type, timestamp, and frame_data (base64 encoded).
+ */
+app.post('/api/quiz/store-violation-frame', async (req, res) => {
+    try {
+        const { quiz_id, student_username, violation_type, frame_data, timestamp } = req.body;
+        
+        // Validate required fields
+        if (!quiz_id || !student_username || !violation_type || !frame_data) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Missing required fields for storing violation frame' 
+            });
+        }
+        
+        // Insert the frame data into the database
+        const query = `
+            INSERT INTO quiz_violation_frames 
+            (quiz_id, student_username, violation_type, timestamp, frame_data) 
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        
+        const frameTimestamp = timestamp || new Date().toISOString();
+        
+        const connection = await pool.getConnection();
+        try {
+            const [result] = await connection.query(query, [
+                quiz_id, 
+                student_username, 
+                violation_type,
+                frameTimestamp,
+                frame_data
+            ]);
+            
+            return res.status(200).json({ 
+                success: true, 
+                message: "Violation frame stored successfully",
+                frameId: result.insertId
+            });
+        } catch (err) {
+            console.error("Database error storing violation frame:", err);
+            return res.status(500).json({ 
+                success: false,
+                message: "Failed to store violation frame in database: " + (err.sqlMessage || err.message)
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error("Server error handling violation frame:", err);
+        return res.status(500).json({ 
+            success: false,
+            message: "An unexpected error occurred processing the violation frame: " + err.message 
+        });
+    }
+});
+
+/**
+ * Get Quiz Violation Frames API Endpoint
+ * 
+ * This endpoint retrieves webcam violation frames from the database for a specific quiz and student.
+ * It supports optional filtering by violation type and timestamp range.
+ */
+app.get('/api/quiz/get-violation-frames', async (req, res) => {
+    try {
+        const { quiz_id, student_username, violation_type, start_date, end_date } = req.query;
+        
+        // Validate required fields
+        if (!quiz_id) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Quiz ID is required' 
+            });
+        }
+        
+        // Build the query with conditional filters
+        let query = `
+            SELECT id, quiz_id, student_username, violation_type, timestamp, 
+                   frame_data, incident_count, created_at
+            FROM quiz_violation_frames
+            WHERE quiz_id = ?
+        `;
+        
+        const queryParams = [quiz_id];
+        
+        // Add optional filters
+        if (student_username) {
+            query += ` AND student_username = ?`;
+            queryParams.push(student_username);
+        }
+        
+        if (violation_type) {
+            query += ` AND violation_type = ?`;
+            queryParams.push(violation_type);
+        }
+        
+        if (start_date) {
+            query += ` AND timestamp >= ?`;
+            queryParams.push(start_date);
+        }
+        
+        if (end_date) {
+            query += ` AND timestamp <= ?`;
+            queryParams.push(end_date);
+        }
+        
+        // Order by timestamp
+        query += ` ORDER BY timestamp DESC`;
+        
+        const connection = await pool.getConnection();
+        try {
+            const [rows] = await connection.query(query, queryParams);
+            
+            return res.status(200).json({ 
+                success: true, 
+                message: "Violation frames retrieved successfully",
+                data: rows
+            });
+        } catch (err) {
+            console.error("Database error retrieving violation frames:", err);
+            return res.status(500).json({ 
+                success: false,
+                message: "Failed to retrieve violation frames: " + (err.sqlMessage || err.message)
+            });
+        } finally {
+            connection.release();
+        }
+    } catch (err) {
+        console.error("Server error retrieving violation frames:", err);
+        return res.status(500).json({ 
+            success: false,
+            message: "An unexpected error occurred retrieving violation frames: " + err.message 
+        });
+    }
+});
+
 // Login route for students
 app.post("/loginStudent", async (req, res) => {
     try {
