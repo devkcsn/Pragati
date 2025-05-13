@@ -21,8 +21,8 @@ require('dotenv').config();               // Environment variable configuration
 // Middleware setup
 app.use(cors());                              // Enable CORS for all routes
 app.use(express.static('public'));            // Serve static files from 'public' directory
-app.use(express.urlencoded({ extended: false })); // Parse URL-encoded form data
-app.use(bodyParser.json());                   // Parse JSON request bodies
+app.use(express.urlencoded({ extended: false, limit: '50mb' })); // Parse URL-encoded form data with increased limit
+app.use(bodyParser.json({ limit: '50mb' }));  // Parse JSON request bodies with increased limit
 app.set('view engine', 'ejs');                // Set EJS as the template engine
 
 /**
