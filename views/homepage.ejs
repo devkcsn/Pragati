@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Pragati</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="shortcut icon" href="books-stack-of-three.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <style media="screen">
+        /* Base Styles */
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-image: url('/assets/images/background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            z-index: 0;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Blurred overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 0;
+        }
+        
+        /* Style for logo */
+        .logo {
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* Main container - MODIFIED POSITIONING */
+        .container {
+            display: flex;
+            width: 800px;
+            height: 480px;
+            position: absolute;
+            transform: translate(50%, -50%);
+            top: 50%;
+            right: 30%;
+            border-radius: 45px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        /* Form container - Now on the left */
+        .form-container {
+            background-color: rgba(255, 255, 255, 0.13);
+            padding: 40px 35px;
+            width: 60%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Image container - Now on the right */
+        .image-container {
+            width: 40%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Typography */
+        .form-container h3 {
+            color: #ffffff;
+            font-size: 32px;
+            font-weight: 500;
+            line-height: 42px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        /* Button container */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 30px;
+        }
+        
+        .button-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+        }
+        
+        /* Role buttons */
+        .role-button {
+            width: 200px;
+            height: 200px;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .role-button img {
+            width: 90px;
+            height: 100px;
+            transition: all 0.3s ease;
+        }
+        
+        .role-button span {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            margin-top: 15px;
+            position: absolute;
+        }
+        
+        .role-button:hover {
+            transform: scale(1.05);
+            background-color: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .role-button:hover img {
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+        
+        .role-button:hover span {
+            opacity: 1;
+        }
+        
+        /* Register button */
+        .register-button {
+            width: 80%;
+            height: 55px;
+            background-color: #ffffff;
+            color: #080710;
+            border-radius: 45px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .register-button:hover {
+            transform: scale(1.02);
+            background-color: #000000;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 80px 30px 30px;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+            color: white;
+            transition: right 0.3s ease;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #ffffff;
+            position: relative;
+        }
+        
+        .sidebar h3:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 3px;
+        }
+        
+        .sidebar p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .sidebar a {
+            color: #ffffff;
+            text-decoration: underline;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .sidebar a:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Hamburger icon */
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            z-index: 3;
+            font-size: 24px;
+            color: white;
+            width: 45px;
+            height: 45px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .hamburger:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+        
+        /* Sidebar close button */
+        .sidebar-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s ease;
+        }
+        
+        .sidebar-close:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Social media icons */
+        .social-icons {
+            display: flex;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        
+        .social-icons a {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .social-icons a:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 850px) {
+            .container {
+                width: 90%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            
+            .image-container {
+                width: 30%;
+            }
+            
+            .form-container {
+                width: 70%;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .image-container {
+                display: none;
+            }
+            
+            .form-container {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .button-row {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .role-button {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .role-button img {
+                width: 70px;
+                height: 80px;
+            }
+            
+            .container {
+                height: auto;
+                padding: 30px 0;
+            }
+            
+            .form-container h3 {
+                font-size: 28px;
+            }
+            
+            .sidebar {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+
+    <!-- Logo section -->
+    <a href="/" class="logo">
+        <img src="/assets/images/pragati.png" alt="Logo" width="350" height="150">
+    </a>
+
+    <div class="container">
+        <!-- Form container now on the left -->
+        <div class="form-container">
+            <h3>Login As</h3>
+            <div class="button-container">
+                <div class="button-row">
+                    <div class="role-button" onclick="login('student')">
+                        <img src="/assets/images/student.png" alt="Student">
+                        <span>Student</span>
+                    </div>
+                    <div class="role-button" onclick="login('coordinator')">
+                        <img src="/assets/images/admin.png" alt="Coordinator">
+                        <span>Coordinator</span>
+                    </div>
+                </div>
+                <button type="button" class="register-button" onclick="register()">
+                    <i class="fas fa-user-plus" style="margin-right: 10px;"></i>Register
+                </button>
+            </div>
+        </div>
+        
+        <!-- Image container now on the right -->
+        <div class="image-container">
+            <!-- Placeholder for your image -->
+            <img src="assets/images/Pragati_icon.png" alt="Your Image">
+        </div>
+    </div>
+
+    <!-- Sidebar Section -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-close" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
+        </div>
+        
+        <h3>About Us</h3>
+        <p>Pragati is an activity monitored online exam platform ensuring secure, cheat-free assessments.</p>
+        <p>Our technology offers automated proctoring and identity verification to maintain academic integrity.</p>
+
+        <p>Join Pragati today—where progress meets integrity in online assessments.</p>
+        
+        <h3>Contact Us</h3>
+        <p><i class="fas fa-envelope" style="margin-right: 10px;"></i>Email: kcsnraj@gmail.com</p>
+        <p><i class="fas fa-phone" style="margin-right: 10px;"></i>Phone: +91 8002029001</p>
+        
+    </div>
+
+    <!-- Hamburger icon -->
+    <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <script>
+        // Function to handle login based on role
+        function login(role) {
+            if (role === 'student') {
+                window.location.href = '/loginStudent';
+            } else if (role === 'coordinator') {
+                window.location.href = '/loginCoordinator';
+            }
+        }
+
+        // Function to handle registration
+        function register() {
+            window.location.href = '/register';
+        }
+
+        // Function to toggle sidebar and hamburger visibility
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const hamburger = document.getElementById('hamburger');
+            
+            sidebar.classList.toggle('open');
+            
+            // Toggle hamburger visibility when sidebar is open
+            if (sidebar.classList.contains('open')) {
+                hamburger.style.display = 'none';
+            } else {
+                hamburger.style.display = 'flex';
+            }
+        }
+        
+        // Add hover effects dynamically
+        document.querySelectorAll('.role-button').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.querySelector('span').style.opacity = '1';
+                this.querySelector('img').style.opacity = '0.3';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.querySelector('span').style.opacity = '0';
+                this.querySelector('img').style.opacity = '1';
+            });
+        });
+    </script>
+</body>
+</html>

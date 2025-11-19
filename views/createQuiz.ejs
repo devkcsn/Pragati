@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Quiz</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary-color: #6c757d;
+            --success-color: #2ecc71;
+            --success-hover: #27ae60;
+            --danger-color: #e74c3c;
+            --danger-hover: #c0392b;
+            --light-bg: #f8f9fa;
+            --border-color: #dfe4ea;
+            --text-color: #2d3436;
+            --text-secondary: #636e72;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            color: var(--text-color);
+        }
+        
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar h1 {
+            margin: 0;
+        }
+        
+        .navbar .username {
+            font-size: 18px;
+        }
+        
+        .navbar .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        .navbar .nav-links a:hover {
+            color: #ccc;
+        }
+        
+        .container {
+            max-width: 960px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .quiz-form {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--box-shadow);
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .form-header {
+            margin-bottom: 35px;
+            text-align: center;
+        }
+        
+        .form-header h2 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .form-header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-top: 0;
+        }
+        
+        .form-section {
+            margin-bottom: 40px;
+        }
+        
+        .form-section h3 {
+            color: var(--text-color);
+            font-size: 20px;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+            position: relative;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-group .help-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        
+        .question-box {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .question-box:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .question-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .remove-question {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 18px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        .remove-question:hover {
+            background-color: #ffeeee;
+        }
+        
+        .option-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .option-group:hover {
+            background-color: #eef1ff;
+        }
+        
+        .option-group input[type="text"] {
+            flex: 1;
+            margin-right: 12px;
+            border-radius: 6px;
+        }
+        
+        .option-group .radio-label {
+            display: flex;
+            align-items: center;
+            margin: 0 12px 0 0;
+            cursor: pointer;
+            padding: 6px 12px;
+            background-color: white;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .option-group .radio-label:hover {
+            background-color: #f0f4ff;
+        }
+        
+        .option-group .radio-label input {
+            margin-right: 8px;
+            width: auto;
+            cursor: pointer;
+        }
+        
+        .options-container {
+            margin-bottom: 16px;
+        }
+        
+        .options-container label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .action-buttons {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: var(--success-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+        
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+        
+        .btn-small {
+            font-size: 14px;
+            padding: 8px 14px;
+        }
+        
+        #add-question-btn {
+            margin: 15px 0;
+            padding: 12px 20px;
+            width: auto;
+        }
+        
+        .add-option {
+            margin-bottom: 15px;
+        }
+        
+        .date-time-flex {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .date-time-flex .form-group {
+            flex: 1;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .quiz-form {
+                padding: 25px;
+            }
+            
+            .option-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .option-group input[type="text"] {
+                margin-bottom: 10px;
+                margin-right: 0;
+                width: 100%;
+            }
+            
+            .option-group .radio-label {
+                margin-bottom: 10px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .action-buttons button {
+                width: 100%;
+            }
+            
+            .date-time-flex {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>Create Quiz</h1>
+        <div class="nav-links">
+            <div class="username">Welcome, <%= user.firstName %> <%= user.lastName %></div>
+            <a href="/coordinatorDashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <form id="quizForm" class="quiz-form">
+            <div class="form-header">
+                <h2>Create a New Quiz</h2>
+                <p>Fill out the form below to create a new quiz for your students</p>
+            </div>
+            
+            <div class="form-section">
+                <h3>Quiz Details</h3>
+                <div class="form-group">
+                    <label for="title">Quiz Title</label>
+                    <input type="text" id="title" name="title" required placeholder="Enter quiz title">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description (Optional)</label>
+                    <textarea id="description" name="description" placeholder="Enter a brief description of the quiz"></textarea>
+                </div>
+                
+                <div class="date-time-flex">
+                    <div class="form-group">
+                        <label for="scheduledDate">Schedule Quiz For</label>
+                        <input type="datetime-local" id="scheduledDate" name="scheduledDate">
+                        <div class="help-text">When the quiz becomes available to students</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deadlineDate">Deadline</label>
+                        <input type="datetime-local" id="deadlineDate" name="deadlineDate">
+                        <div class="help-text">Last date/time students can access this quiz</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration">Duration (minutes)</label>
+                    <input type="number" id="duration" name="duration" min="1" value="30" required>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Questions</h3>
+                <div id="questions-container">
+                    <!-- Questions will be added here -->
+                </div>
+                
+                <button type="button" id="add-question-btn" class="btn-primary">
+                    <i class="fas fa-plus"></i> Add Question
+                </button>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" onclick="window.location.href='/coordinatorDashboard'" class="btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn-success">
+                    <i class="fas fa-check"></i> Create Quiz
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const quizForm = document.getElementById('quizForm');
+            const addQuestionBtn = document.getElementById('add-question-btn');
+            const questionsContainer = document.getElementById('questions-container');
+            const scheduledDateInput = document.getElementById('scheduledDate');
+            const deadlineDateInput = document.getElementById('deadlineDate');
+            
+            let questionCount = 0;
+            
+            // Set minimum date for scheduling to today
+            const today = new Date();
+            const formattedDate = today.toISOString().slice(0, 16);
+            scheduledDateInput.min = formattedDate;
+            deadlineDateInput.min = formattedDate;
+            
+            // Add first question by default
+            addQuestion();
+            
+            // Add question button event
+            addQuestionBtn.addEventListener('click', addQuestion);
+            
+            // Validate deadline is after scheduled date
+            scheduledDateInput.addEventListener('change', validateDates);
+            deadlineDateInput.addEventListener('change', validateDates);
+            
+            function validateDates() {
+                if (scheduledDateInput.value && deadlineDateInput.value) {
+                    const startDate = new Date(scheduledDateInput.value);
+                    const endDate = new Date(deadlineDateInput.value);
+                    
+                    if (endDate <= startDate) {
+                        alert('Deadline must be after the scheduled date');
+                        deadlineDateInput.value = '';
+                    }
+                }
+            }
+            
+            // Form submission
+            quizForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate form
+                if (!validateForm()) {
+                    alert('Please fill out all required fields and ensure each question has at least one correct answer.');
+                    return;
+                }
+                
+                // Construct quiz data
+                const quizData = {
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    scheduledDate: document.getElementById('scheduledDate').value || null,
+                    deadlineDate: document.getElementById('deadlineDate').value || null,
+                    duration: parseInt(document.getElementById('duration').value, 10),
+                    questions: []
+                };
+                
+                // Get questions
+                const questionBoxes = document.querySelectorAll('.question-box');
+                questionBoxes.forEach(box => {
+                    const questionText = box.querySelector('.question-text').value;
+                    const options = [];
+                    
+                    const optionGroups = box.querySelectorAll('.option-group');
+                    optionGroups.forEach(group => {
+                        const optionText = group.querySelector('.option-text').value;
+                        const isCorrect = group.querySelector('.option-correct').checked;
+                        
+                        options.push({
+                            text: optionText,
+                            isCorrect: isCorrect
+                        });
+                    });
+                    
+                    quizData.questions.push({
+                        text: questionText,
+                        options: options
+                    });
+                });
+                
+                try {
+                    // Submit quiz
+                    const response = await fetch('/api/quizzes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(quizData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Quiz created successfully!');
+                        window.location.href = '/coordinatorDashboard';
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (err) {
+                    console.error('Error submitting quiz:', err);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+            
+            // Function to add a new question
+            function addQuestion() {
+                questionCount++;
+                
+                const questionBox = document.createElement('div');
+                questionBox.className = 'question-box';
+                questionBox.innerHTML = `
+                    <div class="question-number">${questionCount}</div>
+                    <button type="button" class="remove-question">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    
+                    <div class="form-group">
+                        <label>Question Text</label>
+                        <input type="text" class="question-text" required placeholder="Enter your question here">
+                    </div>
+                    
+                    <div class="options-container">
+                        <label>Answer Options</label>
+                    </div>
+                    
+                    <button type="button" class="add-option btn-small btn-secondary">
+                        <i class="fas fa-plus"></i> Add Option
+                    </button>
+                `;
+                
+                questionsContainer.appendChild(questionBox);
+                
+                // Add event listeners for this question
+                const addOptionBtn = questionBox.querySelector('.add-option');
+                const removeQuestionBtn = questionBox.querySelector('.remove-question');
+                const optionsContainer = questionBox.querySelector('.options-container');
+                
+                // Add two default options
+                addOption(optionsContainer, questionCount);
+                addOption(optionsContainer, questionCount);
+                
+                addOptionBtn.addEventListener('click', function() {
+                    addOption(optionsContainer, questionCount);
+                });
+                
+                removeQuestionBtn.addEventListener('click', function() {
+                    if (document.querySelectorAll('.question-box').length > 1) {
+                        questionBox.remove();
+                        renumberQuestions();
+                    } else {
+                        alert('You must have at least one question');
+                    }
+                });
+            }
+            
+            // Function to add a new option
+            function addOption(container, questionId) {
+                const optionGroup = document.createElement('div');
+                optionGroup.className = 'option-group';
+                optionGroup.innerHTML = `
+                    <input type="text" class="option-text" required placeholder="Enter an answer option">
+                    <label class="radio-label">
+                        <input type="radio" name="correct-${questionId}" class="option-correct">
+                        Correct
+                    </label>
+                    <button type="button" class="remove-option btn-small btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                
+                container.appendChild(optionGroup);
+                
+                // Add event listener for removing this option
+                const removeOptionBtn = optionGroup.querySelector('.remove-option');
+                removeOptionBtn.addEventListener('click', function() {
+                    const optionCount = container.querySelectorAll('.option-group').length;
+                    if (optionCount > 2) {
+                        optionGroup.remove();
+                    } else {
+                        alert('Each question must have at least two options');
+                    }
+                });
+            }
+            
+            // Function to renumber questions after deletion
+            function renumberQuestions() {
+                const questionBoxes = document.querySelectorAll('.question-box');
+                questionCount = questionBoxes.length;
+                
+                questionBoxes.forEach((box, index) => {
+                    box.querySelector('.question-number').textContent = index + 1;
+                    
+                    // Update radio button names
+                    const radioButtons = box.querySelectorAll('.option-correct');
+                    radioButtons.forEach(radio => {
+                        radio.name = `correct-${index + 1}`;
+                    });
+                });
+            }
+            
+            // Function to validate the form
+            function validateForm() {
+                // Check required fields
+                const requiredFields = document.querySelectorAll('[required]');
+                for (const field of requiredFields) {
+                    if (!field.value.trim()) {
+                        field.focus();
+                        return false;
+                    }
+                }
+                
+                // Check that each question has at least one correct answer
+                const questionBoxes = document.querySelectorAll('.question-box');
+                for (const box of questionBoxes) {
+                    const hasCorrectAnswer = box.querySelector('.option-correct:checked') !== null;
+                    if (!hasCorrectAnswer) {
+                        alert('Question ' + box.querySelector('.question-number').textContent + ' does not have a correct answer selected.');
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+        });
+    </script>
+
+</body>
+</html>

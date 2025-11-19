@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary-color: #6c757d;
+            --success-color: #2ecc71;
+            --success-hover: #27ae60;
+            --danger-color: #e74c3c;
+            --danger-hover: #c0392b;
+            --warning-color: #f39c12;
+            --warning-hover: #e67e22;
+            --light-bg: #f8f9fa;
+            --border-color: #dfe4ea;
+            --text-color: #2d3436;
+            --text-secondary: #636e72;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            color: var(--text-color);
+        }
+        
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar h1 {
+            margin: 0;
+        }
+        
+        .navbar .username {
+            font-size: 18px;
+        }
+        
+        .navbar .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        .navbar .nav-links a:hover {
+            color: #ccc;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .quiz-section {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .quiz-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.5em;
+            text-align: center;
+            color: var(--primary-color);
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .quiz-section label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: 500;
+        }
+        .quiz-section input, .quiz-section select, .quiz-section textarea {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .quiz-section input:focus, .quiz-section select:focus, .quiz-section textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        .quiz-section button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .quiz-section button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .question-answer {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .question-answer label {
+            margin-right: 15px;
+        }
+        #quiz-list {
+            list-style: none;
+            padding: 0;
+        }
+        #quiz-list li {
+            background-color: white;
+            margin: 15px 0;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        #quiz-list li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        #quiz-list li div {
+            flex: 1;
+        }
+        #quiz-list li h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        #quiz-list li p {
+            margin: 5px 0;
+            color: var(--text-secondary);
+        }
+        #quiz-list li.error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+        #quiz-list button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        #quiz-list button i {
+            margin-right: 8px;
+        }
+        #quiz-list button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #quiz-list button:disabled {
+            background-color: var(--secondary-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        #quiz-list button.expired {
+            background-color: var(--danger-color);
+            cursor: not-allowed;
+        }
+        #quiz-list button.expired:hover {
+            background-color: var(--danger-hover);
+            transform: none;
+            box-shadow: none;
+        }
+        .quiz-and-video-container {
+            display: flex;
+            gap: 20px;
+            justify-content: flex-start;
+            margin-top: 20px;
+        }
+        .quiz-form {
+            flex: 1;
+        }
+        .video-feed {
+            flex: 0 0 300px;
+            min-height: 240px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--box-shadow);
+        }
+        #timer {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 10px 0;
+            padding: 12px;
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        #submit-quiz {
+            display: block;
+            width: 200px;
+            margin: 25px auto 0;
+            padding: 15px 30px;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        #submit-quiz:hover {
+            background-color: var(--success-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        .stats-section {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: var(--light-bg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .loading {
+            text-align: center;
+            padding: 25px;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+        .deadline-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .deadline-info i {
+            color: var(--warning-color);
+        }
+        .deadline-warning {
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+        .deadline-expired {
+            color: var(--danger-color);
+            font-weight: 500;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .badge-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .quiz-score {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            background-color: #edf7ed;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .quiz-score i {
+            color: var(--success-color);
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
+        .quiz-score span {
+            font-weight: 500;
+            color: #2e7d32;
+        }
+        @media (max-width: 1024px) {
+            .quiz-and-video-container {
+                flex-direction: column;
+            }
+            .video-feed {
+                width: 100%;
+                min-height: 200px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            #quiz-list li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            #quiz-list button {
+                margin-top: 15px;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Student Dashboard</h1>
+        <div class="nav-links">
+            <div class="username">Welcome, <%= user.firstName %> <%= user.lastName %></div>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-section">
+            <h2>Your Progress</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="completedQuizzes">-</div>
+                    <div class="stat-label">Completed Quizzes</div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-number" id="averageScore">-</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-number" id="pendingQuizzes">-</div>
+                    <div class="stat-label">Pending Quizzes</div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-number" id="expiredQuizzes">-</div>
+                    <div class="stat-label">Expired Quizzes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quiz-section">
+            <h2>Available Quizzes</h2>
+            <ul id="quiz-list">
+                <li class="loading">Loading available quizzes...</li>
+            </ul>
+        </div>
+
+        <div class="quiz-section" id="quiz-content" style="display: none;">
+            <h2 id="quiz-title"></h2>
+            <div id="timer" style="display: none;"></div>
+            <div class="quiz-and-video-container">
+                <form id="quiz-form" class="quiz-form"></form>
+                <div id="live-video-feed" class="video-feed"></div>
+            </div>
+            <button id="submit-quiz" type="button">Submit Quiz</button>
+        </div>
+    </div>
+
+    <script>
+// Global variables 
+let stream;
+let timerInterval;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Load student statistics
+    loadStudentStats();
+    
+    // Load available quizzes
+    loadAvailableQuizzes();
+
+    // Add event listener for quiz submission if it exists
+    const submitButton = document.getElementById('submit-quiz');
+    if (submitButton) {
+        submitButton.addEventListener('click', () => submitQuiz(false));
+    }
+});
+
+// Fetch student statistics from backend
+async function loadStudentStats() {
+    try {
+        const response = await fetch('/api/student/stats');
+        if (!response.ok) {
+            throw new Error('Failed to fetch student statistics');
+        }
+        
+        const stats = await response.json();
+        
+        // Update the stats display with real data
+        document.getElementById('completedQuizzes').textContent = stats.completedQuizzes || '0';
+        document.getElementById('averageScore').textContent = `${Math.round(stats.averageScore || 0)}%`;
+        document.getElementById('pendingQuizzes').textContent = stats.pendingQuizzes || '0';
+        document.getElementById('expiredQuizzes').textContent = stats.expiredQuizzes || '0';
+        
+    } catch (error) {
+        console.error("Error loading student statistics:", error);
+        
+        // Set defaults if we couldn't load the stats
+        document.getElementById('completedQuizzes').textContent = '0';
+        document.getElementById('averageScore').textContent = '0%';
+        document.getElementById('pendingQuizzes').textContent = '0';
+        document.getElementById('expiredQuizzes').textContent = '0';
+    }
+}
+
+// Load available quizzes from backend
+async function loadAvailableQuizzes() {
+    try {
+        // Use the API endpoint that returns JSON
+        const response = await fetch('/api/availableQuizzes');
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch available quizzes');
+        }
+        
+        const quizzes = await response.json();
+        displayQuizzes(quizzes);
+    } catch (error) {
+        console.error("Error loading available quizzes:", error);
+        document.getElementById('quiz-list').innerHTML = 
+            '<li class="error">Failed to load quizzes. Please try again later.</li>';
+    }
+}
+
+// Display the quizzes in the UI - UPDATED to use deadline_dates instead of deadline_date
+// In the displayQuizzes function, change deadline_dates to deadline_date
+// Display the quizzes in the UI
+function displayQuizzes(quizzes) {
+    const quizList = document.getElementById('quiz-list');
+    
+    if (!quizzes || quizzes.length === 0) {
+        quizList.innerHTML = '<li class="loading">No quizzes available at this time.</li>';
+        return;
+    }
+    
+    // Get current date for deadline comparison
+    const now = new Date();
+    
+    // Debug: Log the received quizzes data
+    console.log('Quizzes data received:', JSON.stringify(quizzes));
+    
+    quizList.innerHTML = quizzes.map(quiz => {
+        // Check for deadline_date property (could be deadline_date, deadline, or deadline_dates in your API)
+        // First verify what property name is actually being used in the data
+        console.log("Quiz object properties:", Object.keys(quiz));
+        
+        // Try to find the deadline date property
+        let deadlineProperty = 'deadline_date';
+        if (quiz.deadline_date === undefined) {
+            if (quiz.deadline !== undefined) {
+                deadlineProperty = 'deadline';
+            } else if (quiz.deadline_dates !== undefined) {
+                deadlineProperty = 'deadline_dates';
+            }
+        }
+        
+        const hasDeadline = quiz[deadlineProperty] !== null && quiz[deadlineProperty] !== undefined;
+        const deadlineDate = hasDeadline ? new Date(quiz[deadlineProperty]) : null;
+        const isExpired = hasDeadline && deadlineDate < now;
+        
+        // Debug the deadline date
+        console.log(`Quiz ${quiz.id} - ${quiz.title}: deadline property = ${deadlineProperty}, value = ${quiz[deadlineProperty]}, isExpired = ${isExpired}`);
+        
+        // Determine status and button type
+        let statusBadge = '';
+        let buttonClass = '';
+        let buttonText = '';
+        let buttonIcon = '';
+        let isButtonDisabled = false;
+        let scoreDisplay = ''; 
+        
+        if (quiz.attempted) {
+            // Show the obtained marks for completed quizzes
+            statusBadge = '<span class="badge badge-success">Completed</span>';
+            buttonClass = 'disabled';
+            buttonText = 'Already Completed';
+            buttonIcon = '<i class="fas fa-check-circle"></i>';
+            isButtonDisabled = true;
+            
+            // More robust handling of score display for completed quizzes
+            const marksObtained = quiz.marks_obtained !== undefined && quiz.marks_obtained !== null 
+                ? quiz.marks_obtained : 0;
+            const totalMarks = quiz.total_marks !== undefined && quiz.total_marks !== null 
+                ? quiz.total_marks : 1;
+                
+            // Avoid division by zero
+            const scorePercentage = totalMarks > 0 
+                ? Math.round((marksObtained / totalMarks) * 100) 
+                : 0;
+                
+            scoreDisplay = `
+                <div class="quiz-score">
+                    <i class="fas fa-award"></i> 
+                    <span>Score: ${marksObtained}/${totalMarks} (${scorePercentage}%)</span>
+                </div>
+            `;
+        } else if (isExpired) {
+            statusBadge = '<span class="badge badge-danger">Expired</span>';
+            buttonClass = 'expired';
+            buttonText = 'Deadline Passed';
+            buttonIcon = '<i class="fas fa-clock"></i>';
+            isButtonDisabled = true;
+        } else {
+            // Active quiz
+            statusBadge = '<span class="badge badge-info">Available</span>';
+            buttonClass = '';
+            buttonText = 'Start Quiz';
+            buttonIcon = '<i class="fas fa-play-circle"></i>';
+            isButtonDisabled = false;
+        }
+        
+        // Get time remaining for deadline display
+        let deadlineInfo = '';
+        if (hasDeadline && !isExpired) {
+            const timeRemaining = getTimeRemaining(deadlineDate);
+            deadlineInfo = `
+                <div class="deadline-info">
+                    <i class="fas fa-clock"></i>
+                    <span class="deadline-warning">Deadline: ${formatDate(quiz[deadlineProperty])} (${timeRemaining})</span>
+                </div>
+            `;
+        } else if (isExpired) {
+            deadlineInfo = `
+                <div class="deadline-info">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span class="deadline-expired">Deadline passed: ${formatDate(quiz[deadlineProperty])}</span>
+                </div>
+            `;
+        }
+        
+        return `
+            <li>
+                <div>
+                    <h3>${quiz.title} ${statusBadge}</h3>
+                    <p>${quiz.description || 'No description provided'}</p>
+                    <p>Created by: ${quiz.first_name} ${quiz.last_name}</p>
+                    <p>Available from: ${formatDate(quiz.scheduled_date)}</p>
+                    ${deadlineInfo}
+                    ${scoreDisplay}
+                </div>
+                <button type="button" class="quiz-start-btn ${buttonClass}" 
+                        data-quiz-id="${quiz.id}" ${isButtonDisabled ? 'disabled' : ''}>
+                    ${buttonIcon} ${buttonText}
+                </button>
+            </li>
+        `;
+    }).join('');
+    
+    // Add event listeners to all quiz start buttons
+    document.querySelectorAll('.quiz-start-btn:not([disabled])').forEach(button => {
+        button.addEventListener('click', function() {
+            const quizId = this.getAttribute('data-quiz-id');
+            console.log(`Button clicked for quiz ID: ${quizId}`);
+            startQuiz(quizId);
+        });
+    });
+}
+// Format date nicely
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Calculate time remaining until deadline
+function getTimeRemaining(deadlineDate) {
+    const now = new Date();
+    const diff = deadlineDate - now;
+    
+    // Convert to days, hours, minutes
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) {
+        return `${days} day${days > 1 ? 's' : ''} remaining`;
+    } else if (hours > 0) {
+        return `${hours} hour${hours > 1 ? 's' : ''} remaining`;
+    } else {
+        return `${minutes} minute${minutes > 1 ? 's' : ''} remaining`;
+    }
+}
+
+// Start taking a quiz - UPDATED to check for deadline before starting
+function startQuiz(quizId) {
+    console.log(`Starting quiz with ID: ${quizId}`);
+    try {
+        // Check if quizId is valid
+        if (!quizId) {
+            console.error("Invalid quiz ID");
+            alert("Error: Cannot start quiz with invalid ID");
+            return;
+        }
+        
+        // Find the quiz in the list to check if it's expired
+        const quizButton = document.querySelector(`.quiz-start-btn[data-quiz-id="${quizId}"]`);
+        
+        if (quizButton && quizButton.classList.contains('expired')) {
+            console.error("Cannot start an expired quiz");
+            alert("This quiz has expired and is no longer accessible.");
+            return;
+        }
+        
+        if (quizButton && quizButton.disabled) {
+            console.error("Cannot start a disabled quiz");
+            alert("This quiz is not available to take at this time.");
+            return;
+        }
+        
+        // Redirect to the full quiz page
+        const quizUrl = `/takeQuiz/${quizId}`;
+        console.log(`Redirecting to: ${quizUrl}`);
+        window.location.href = quizUrl;
+    } catch (error) {
+        console.error("Error in startQuiz function:", error);
+        alert("Failed to start quiz. Please try again.");
+    }
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+    
+    // Stop any active media streams
+    if (stream && stream.getTracks) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+});
+    </script>
+</body>
+</html>

@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Quiz - Student Portal</title>
+    <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 {
+            margin: 0;
+        }
+        .navbar .username {
+            font-size: 18px;
+        }
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .quiz-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .quiz-section h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 1.5em;
+            text-align: center;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .question-answer {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .question-answer label {
+            margin-right: 15px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .question-answer input[type="radio"] {
+            cursor: pointer;
+        }
+        #timer {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #007bff;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        #submit-quiz {
+            display: block;
+            width: 200px;
+            margin: 20px auto 0;
+            padding: 15px 30px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+        #submit-quiz:hover {
+            background-color: #218838;
+        }
+        .quiz-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+        .quiz-form {
+            width: 100%;
+        }
+        /* Modal overlay styling - improved */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        .fullscreen-content {
+            background-color: #333;
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        .fullscreen-content h2 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 24px;
+        }
+        .fullscreen-content p {
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        #enter-fullscreen-btn, #return-fullscreen-btn {
+            padding: 12px 30px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #enter-fullscreen-btn:hover, #return-fullscreen-btn:hover {
+            background-color: #0056b3;
+        }
+        .fullscreen-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #007bff;
+        }
+        /* Status indicator for fullscreen in navbar */
+        .fullscreen-status {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+            font-size: 14px;
+        }
+        .fullscreen-status i {
+            margin-right: 5px;
+            color: #28a745;
+        }
+        /* Main content container that will have blur effect when not in fullscreen */
+        #main-content {
+            display: block;
+            filter: none;
+            transition: filter 0.3s ease;
+        }
+        /* Class to add blur effect */
+        .blurred {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+        @media (max-width: 1024px) {
+            .quiz-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Initial Fullscreen Modal -->
+    <div id="fullscreen-modal" class="modal-overlay">
+        <div class="fullscreen-content">
+            <div class="fullscreen-icon">
+                <i class="fas fa-expand"></i>
+            </div>
+            <h2>Fullscreen Required</h2>
+            <p>This quiz must be taken in fullscreen mode to ensure academic integrity. Please click the button below to enter fullscreen mode and begin your quiz.</p>
+            <p><strong>Warning:</strong> Exiting fullscreen mode during the quiz will pause the quiz until you return to fullscreen.</p>
+            <button id="enter-fullscreen-btn">Enter Fullscreen & Start Quiz</button>
+        </div>
+    </div>
+    
+    <!-- Return to Fullscreen Modal (initially hidden) -->
+    <div id="return-fullscreen-modal" class="modal-overlay" style="display: none;">
+        <div class="fullscreen-content">
+            <div class="fullscreen-icon">
+                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+            </div>
+            <h2>Fullscreen Mode Required</h2>
+            <p>You have exited fullscreen mode. The quiz is paused until you return to fullscreen.</p>
+            <p>This is attempt <span id="fullscreen-exit-count">1</span> of 3. Multiple exits may result in automatic quiz submission.</p>
+            <button id="return-fullscreen-btn">Return to Fullscreen & Continue Quiz</button>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div class="navbar">
+            <h1>Student Quiz</h1>
+            <div class="fullscreen-status" id="fullscreen-indicator">
+                <i class="fas fa-expand"></i> Fullscreen Mode Active
+            </div>
+            <div class="username" id="usernameDisplay">Welcome, <%= user.firstName %> <%= user.lastName %></div>
+        </div>
+
+        <div class="container">
+            
+            <div class="quiz-section">
+                <h2><%= quiz.title %></h2>
+                <div id="timer">Loading timer...</div>
+                
+                <div class="quiz-container">
+                    <form id="quiz-form" class="quiz-form" data-quiz-id="<%= quiz.id %>">
+                        <% questions.forEach((question, index) => { %>
+                            <div class="question">
+                                <h3><%= index + 1 %>. <%= question.question_text %></h3>
+                                <% question.options.forEach(option => { %>
+                                    <div class="question-answer">
+                                        <input type="radio" id="option-<%= option.id %>" name="question-<%= question.id %>" value="<%= option.id %>" required>
+                                        <label for="option-<%= option.id %>"><%= option.option_text %></label>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% }); %>
+                    </form>
+                </div>
+                
+                <button id="submit-quiz" type="button">Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let timerInterval;
+        let quizActive = false; // Initially set to false until fullscreen
+        let exitCount = 0;
+        let timerPausedAt = null; // For pausing the timer when exiting fullscreen
+        let endTime = null; // To calculate remaining time when returning from pause
+        let tabFocusInterval; // For preventing tab switching
+
+        //Face detection variables
+        let websocket;
+        let faceMonitoringActive = false;
+        let lookingAwayStartTime = null;
+        let lookingAway = false;
+        let faceMonitoringWarningSent = false;
+
+        // Start everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initially hide the fullscreen indicator
+            document.getElementById('fullscreen-indicator').style.display = 'none';
+            
+            // Set up fullscreen button event
+            document.getElementById('enter-fullscreen-btn').addEventListener('click', enterFullscreenAndStartQuiz);
+            document.getElementById('return-fullscreen-btn').addEventListener('click', returnToFullscreenAndResumeQuiz);
+            
+            // Start face monitoring immediately when page loads
+            startFaceMonitoring()
+                .then(() => console.log('Face monitoring initialized successfully'))
+                .catch(err => console.error('Error initializing face monitoring:', err));
+            
+            // Set up fullscreen change detection - IMPORTANT: Add all vendor prefixes
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+            
+            // Set up form submission
+            document.getElementById('submit-quiz').addEventListener('click', () => submitQuiz(false));
+        });
+        
+        // Function to enter fullscreen and start quiz
+        function enterFullscreenAndStartQuiz() {
+            const docElement = document.documentElement;
+            
+            if (docElement.requestFullscreen) {
+                docElement.requestFullscreen().then(startQuiz).catch(err => {
+                    alert("Error entering fullscreen mode: " + err.message);
+                });
+            } else if (docElement.mozRequestFullScreen) { // Firefox
+                docElement.mozRequestFullScreen();
+                startQuiz();
+            } else if (docElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
+                docElement.webkitRequestFullscreen();
+                startQuiz();
+            } else if (docElement.msRequestFullscreen) { // IE/Edge
+                docElement.msRequestFullscreen();
+                startQuiz();
+            } else {
+                alert("Fullscreen mode is not supported by your browser. You cannot take this quiz.");
+            }
+        }
+        
+        // Function to return to fullscreen and resume quiz
+        function returnToFullscreenAndResumeQuiz() {
+            const docElement = document.documentElement;
+            
+            if (docElement.requestFullscreen) {
+                docElement.requestFullscreen().then(resumeQuiz).catch(err => {
+                    alert("Error entering fullscreen mode: " + err.message);
+                });
+            } else if (docElement.mozRequestFullScreen) { // Firefox
+                docElement.mozRequestFullScreen();
+                resumeQuiz();
+            } else if (docElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
+                docElement.webkitRequestFullscreen();
+                resumeQuiz();
+            } else if (docElement.msRequestFullscreen) { // IE/Edge
+                docElement.msRequestFullscreen();
+                resumeQuiz();
+            }
+        }
+        
+        // Start the quiz after fullscreen is entered
+        function startQuiz() {
+        // Remove blur from main content
+        document.getElementById('main-content').classList.remove('blurred');
+        
+        // Hide modal
+        document.getElementById('fullscreen-modal').style.display = 'none';
+        document.getElementById('return-fullscreen-modal').style.display = 'none';
+        
+        // Show fullscreen indicator and main content
+        document.getElementById('fullscreen-indicator').style.display = 'flex';
+        document.getElementById('main-content').style.display = 'block';
+        
+        // Set quiz as active
+        quizActive = true;
+        
+        // Ensure we start face monitoring first and then fetch quiz duration
+        startFaceMonitoring()
+            .then(() => {
+                // After face monitoring is initialized, fetch quiz duration
+                return fetchQuizDuration();
+            })
+            .then(duration => {
+                // Start the timer with the fetched duration
+                startTimer(duration);
+                
+                // Set up visibility detection
+                setupVisibilityDetection();
+                
+                // Start tab focus enforcement
+                startTabFocusEnforcement();
+            })
+            .catch(error => {
+                console.error('Error in quiz initialization:', error);
+                // Fallback to default duration if fetch fails
+                startTimer(30);
+                
+                // Setup other monitoring even if one part fails
+                setupVisibilityDetection();
+                startTabFocusEnforcement();
+            });
+    }
+
+        
+        // Resume the quiz after returning to fullscreen
+        function resumeQuiz() {
+            // Remove blur from main content
+            document.getElementById('main-content').classList.remove('blurred');
+            
+            // Hide return modal
+            document.getElementById('return-fullscreen-modal').style.display = 'none';
+            
+            // Show fullscreen indicator and main content
+            document.getElementById('fullscreen-indicator').style.display = 'flex';
+            document.getElementById('main-content').style.display = 'block';
+            
+            // Set quiz as active again
+            quizActive = true;
+            
+            // Restart face monitoring if it was stopped
+            if (!faceMonitoringActive) {
+                startFaceMonitoring();
+            }
+            
+            // Resume the timer if it was paused
+            if (timerPausedAt) {
+                const pauseDuration = Date.now() - timerPausedAt;
+                endTime = new Date(endTime.getTime() + pauseDuration);
+                timerPausedAt = null;
+                
+                // Restart the timer interval
+                const timerDisplay = document.getElementById('timer');
+                updateTimerDisplay(timerDisplay, endTime);
+                
+                timerInterval = setInterval(() => {
+                    updateTimerDisplay(timerDisplay, endTime);
+                }, 1000);
+            }
+            
+            // Re-setup visibility detection
+            setupVisibilityDetection();
+            
+            // Restart tab focus enforcement
+            startTabFocusEnforcement();
+        }
+        
+        // Handle fullscreen change event
+        function handleFullscreenChange() {
+            const isFullscreen = document.fullscreenElement || 
+                                 document.webkitFullscreenElement || 
+                                 document.mozFullScreenElement || 
+                                 document.msFullscreenElement;
+            
+            // Update fullscreen indicator
+            document.getElementById('fullscreen-indicator').style.display = isFullscreen ? 'flex' : 'none';
+            
+            // If quiz is active and user exits fullscreen
+            if (quizActive && !isFullscreen) {
+                // Pause the quiz and show the return modal
+                pauseQuiz();
+            }
+            
+            // If not in fullscreen and quiz hasn't started, show the initial modal
+            if (!isFullscreen && !quizActive) {
+                document.getElementById('fullscreen-modal').style.display = 'flex';
+                document.getElementById('main-content').style.display = 'block';
+                document.getElementById('main-content').classList.add('blurred');
+            }
+        }
+        
+        // Pause the quiz when exiting fullscreen
+        function pauseQuiz() {
+        quizActive = false;
+        
+        // Pause the timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerPausedAt = Date.now();
+        }
+        
+        // Stop tab focus enforcement
+        stopTabFocusEnforcement();
+        
+        // Show main content but blur it
+        document.getElementById('main-content').style.display = 'block';
+        document.getElementById('main-content').classList.add('blurred');
+        
+        // Record the security issue
+        recordSecurityIssue('exited-fullscreen');
+        
+        // Show return to fullscreen modal
+        exitCount++;
+        document.getElementById('fullscreen-exit-count').textContent = exitCount;
+        document.getElementById('return-fullscreen-modal').style.display = 'flex';
+        
+        // If maximum exit count reached, auto-submit
+        if (exitCount >= 3) {
+            setTimeout(() => {
+                alert("You've exited fullscreen mode multiple times. Your quiz will now be submitted.");
+                submitQuiz(true);
+            }, 100);
+        }
+    }
+
+        // Function to fetch quiz duration from the database
+        function fetchQuizDuration() {
+            // This is just an example - you'll need to replace this with your actual API endpoint
+            const quizId = document.getElementById('quiz-form').dataset.quizId;
+            
+            return fetch(`/api/quizzes/${quizId}/duration`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch quiz duration');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    return data.duration; // Assuming the API returns JSON with a duration property
+                });
+        }
+
+        // Timer implementation
+        function startTimer(duration) {
+            // Clear any existing timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            const timerDisplay = document.getElementById('timer');
+            
+            // Set the end time
+            endTime = new Date();
+            endTime.setMinutes(endTime.getMinutes() + duration);
+            
+            // Initial update
+            updateTimerDisplay(timerDisplay, endTime);
+            
+            // Update timer display every second
+            timerInterval = setInterval(() => {
+                updateTimerDisplay(timerDisplay, endTime);
+            }, 1000);
+        }
+        
+        // Update timer display
+        function updateTimerDisplay(timerDisplay, endTime) {
+            const now = new Date();
+            const diff = endTime - now;
+            
+            if (diff <= 0) {
+                // Time's up!
+                clearInterval(timerInterval);
+                timerDisplay.textContent = "Time's up!";
+                timerDisplay.style.color = 'red';
+                
+                // Submit quiz automatically
+                submitQuiz(true);
+                return;
+            }
+            
+            // Calculate minutes and seconds
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            
+            // Add color warnings when time is running low
+            if (minutes < 5) {
+                timerDisplay.style.color = 'orange';
+            }
+            if (minutes < 2) {
+                timerDisplay.style.color = 'red';
+            }
+            
+            timerDisplay.textContent = `Time remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Tab visibility detection
+        function setupVisibilityDetection() {
+            // Track tab/window visibility changes
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            // Track mouse leaving the window
+            document.addEventListener('mouseleave', () => {
+                if (quizActive) {
+                    recordSecurityIssue('mouse-left-window');
+                }
+            });
+            
+            // Prevent closing/refreshing the page
+            window.addEventListener('beforeunload', (e) => {
+                if (quizActive) {
+                    e.preventDefault();
+                    e.returnValue = 'Are you sure you want to leave? This will submit your quiz.';
+                    return e.returnValue;
+                }
+            });
+        }
+
+        // Function to enforce tab focus to prevent tab switching
+        function startTabFocusEnforcement() {
+            // Stop any existing interval first
+            stopTabFocusEnforcement();
+            
+            // Set up an interval that keeps bringing focus back to this window
+            // This makes it harder for students to switch tabs
+            tabFocusInterval = setInterval(() => {
+                if (quizActive && !document.hasFocus()) {
+                    window.focus();
+                    recordSecurityIssue('tab-switch-prevented');
+                }
+            }, 500);
+        }
+        
+        // Stop tab focus enforcement
+        function stopTabFocusEnforcement() {
+            if (tabFocusInterval) {
+                clearInterval(tabFocusInterval);
+                tabFocusInterval = null;
+            }
+        }
+
+        function handleVisibilityChange() {
+            if (!quizActive) return;
+            
+            if (document.hidden) {
+                // User switched tabs or minimized window
+                recordSecurityIssue('tab-switched');
+                
+                // Try to bring focus back to this window
+                window.focus();
+                
+                // Increment exit count and check if auto-submit needed
+                exitCount++;
+                
+                if (exitCount >= 3) {
+                    setTimeout(() => {
+                        alert("You've left the quiz window multiple times. Your quiz will now be submitted.");
+                        submitQuiz(true);
+                    }, 100);
+                } else {
+                    // Just record the security issue for now
+                    recordSecurityIssue('tab-switched');
+                }
+            }
+        }
+        // Modified recordSecurityIssue function to handle face monitoring issues
+        async function recordSecurityIssue(issueType, awayDuration = null) {
+        const quizId = document.getElementById('quiz-form').dataset.quizId;
+        
+        try {
+            // Format the date in MySQL-compatible format: YYYY-MM-DD HH:MM:SS
+            const now = new Date();
+            const formattedDate = now.getFullYear() + '-' + 
+                                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                                String(now.getDate()).padStart(2, '0') + ' ' + 
+                                String(now.getHours()).padStart(2, '0') + ':' + 
+                                String(now.getMinutes()).padStart(2, '0') + ':' + 
+                                String(now.getSeconds()).padStart(2, '0');
+            
+            // Determine which endpoint to use based on issue type
+            const endpoint = issueType.includes('looking-away') || issueType.includes('face-monitoring') 
+                ? '/api/quiz/face-monitoring-issue' 
+                : '/api/quiz/security-issue';
+            
+            const payload = {
+                quizId: quizId,
+                issueType: issueType,
+                timestamp: formattedDate
+            };
+            
+            // Add awayDuration for face monitoring issues
+            if (awayDuration !== null && awayDuration !== undefined) {
+                payload.awayDuration = awayDuration;
+            }
+            
+            await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error("Failed to log security issue:", error);
+            // Continue without stopping quiz execution
+        }
+    }
+
+
+        // Submit quiz with either auto-submission or manual
+        async function submitQuiz(isAutoSubmit = false) {
+            // Prevent multiple submissions
+            if (!quizActive && !isAutoSubmit) return;
+            quizActive = false;
+            
+            // Stop face monitoring
+            await stopFaceMonitoring();
+            
+            // Exit fullscreen mode when submitting
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.error(err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            // Clean up timers and event listeners
+            cleanupQuizResources();
+    
+            
+            const quizForm = document.getElementById('quiz-form');
+            const quizId = quizForm.dataset.quizId;
+            
+            try {
+                // Determine if any questions are unanswered
+                let unansweredCount = 0;
+                const questions = quizForm.querySelectorAll('.question');
+                
+                questions.forEach(question => {
+                    const radios = question.querySelectorAll('input[type="radio"]');
+                    const isAnswered = Array.from(radios).some(r => r.checked);
+                    
+                    if (!isAnswered) {
+                        unansweredCount++;
+                    }
+                });
+                
+                // If auto-submitting, don't confirm
+                if (!isAutoSubmit && unansweredCount > 0) {
+                    const confirmSubmit = confirm(`You haven't answered ${unansweredCount} question(s). Submit anyway?`);
+                    
+                    if (!confirmSubmit) {
+                        // User cancelled submission, restart the quiz
+                        quizActive = true;
+                        setupVisibilityDetection();
+                        // Re-enter fullscreen
+                        returnToFullscreenAndResumeQuiz();
+                        return;
+                    }
+                }
+                
+                // Show submission loading state
+                const submitBtn = document.getElementById('submit-quiz');
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.disabled = true;
+                
+                // Collect answers
+                const formData = new FormData(quizForm);
+                const answers = [];
+                
+                // Process form data into the format expected by the server
+                for (const [name, value] of formData.entries()) {
+                    if (name.startsWith('question-')) {
+                        const questionId = name.split('-')[1];
+                        answers.push({
+                            questionId: questionId,
+                            optionId: value
+                        });
+                    }
+                }
+                
+                // Send submission to server
+                const response = await fetch(`/api/quiz/${quizId}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        answers: answers,
+                        autoSubmitted: isAutoSubmit
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to submit quiz');
+                }
+                
+                const result = await response.json();
+                
+                // Show submission success message
+                alert(`Quiz submitted! ${isAutoSubmit ? '(Auto-submitted due to time limit or security policy)' : ''}\n\nYour score: ${result.score}/${result.total}`);
+                
+                // Redirect back to dashboard
+                window.location.href = '/studentDashboard';
+                
+            } catch (error) {
+                console.error("Error submitting quiz:", error);
+                alert(`Error submitting quiz: ${error.message}`);
+                
+                // Reset the submit button
+                const submitBtn = document.getElementById('submit-quiz');
+                submitBtn.textContent = 'Submit Quiz';
+                submitBtn.disabled = false;
+                quizActive = true; // Allow resubmission
+            }
+        }
+
+        //Face Detection WebSocket connection
+
+        // This function to establish WebSocket connection to the face monitoring server
+        async function startFaceMonitoring() {
+            const quizId = document.getElementById('quiz-form').dataset.quizId;
+            
+            try {
+                // First start the monitoring service on the server
+                const response = await fetch(`/api/quiz/${quizId}/start-monitoring`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to start face monitoring service');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error('Server declined to start face monitoring');
+                }
+                
+                // Connect to the WebSocket with the assigned port
+                const websocketPort = data.websocketPort;
+                websocket = new WebSocket(`ws://localhost:${websocketPort}`);
+                
+                // Create video feed container if it doesn't exist
+                let videoFeedContainer = document.getElementById('video-feed-container');
+                if (!videoFeedContainer) {
+                    videoFeedContainer = document.createElement('div');
+                    videoFeedContainer.id = 'video-feed-container';
+                    videoFeedContainer.style.position = 'fixed';
+                    videoFeedContainer.style.bottom = '10px';
+                    videoFeedContainer.style.right = '10px';
+                    videoFeedContainer.style.width = '200px';
+                    videoFeedContainer.style.height = '150px';
+                    videoFeedContainer.style.border = '2px solid #ccc';
+                    videoFeedContainer.style.borderRadius = '5px';
+                    videoFeedContainer.style.overflow = 'hidden';
+                    videoFeedContainer.style.zIndex = '1000';
+                    
+                    // Add the container to the body
+                    document.body.appendChild(videoFeedContainer);
+                }
+                
+                // Set up WebSocket event handlers
+                websocket.onopen = function() {
+                    console.log('Face monitoring WebSocket connected');
+                    faceMonitoringActive = true;
+                };
+                
+                websocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    recordSecurityIssue('face-monitoring-failed');
+                };
+                
+                websocket.onclose = function() {
+                    console.log('Face monitoring WebSocket closed');
+                    faceMonitoringActive = false;
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Update video feed
+                        if (data.image) {
+                            const videoFeed = document.getElementById('video-feed') || document.createElement('img');
+                            videoFeed.id = 'video-feed';
+                            videoFeed.src = 'data:image/jpeg;base64,' + data.image;
+                            videoFeed.style.width = '100%';
+                            videoFeed.style.height = '100%';
+                            videoFeedContainer.innerHTML = '';
+                            videoFeedContainer.appendChild(videoFeed);
+                        }
+                        
+                        // Track looking away status
+                        if ((data.looking_away && data.early_warning) && !lookingAway) {
+                            // Just started looking away beyond the early warning threshold (4 seconds)
+                            lookingAway = true;
+                            lookingAwayStartTime = Date.now();
+                            showFaceMonitoringWarning();
+                        } else if ((data.looking_away && data.early_warning) && lookingAway) {
+                            // Still looking away, update timer
+                            updateFaceMonitoringWarning(data.away_duration);
+                        } else if (!data.looking_away && lookingAway) {
+                            // Just returned to looking at screen
+                            lookingAway = false;
+                            
+                            // If they were looking away for more than 5 seconds, record it
+                            const lookingAwayDuration = (Date.now() - lookingAwayStartTime) / 1000;
+                            if (lookingAwayDuration > 5) {
+                                recordSecurityIssue('looking-away', lookingAwayDuration);
+                            }
+                            
+                            // Hide warning popup
+                            const warningElement = document.getElementById('face-monitoring-warning');
+                            if (warningElement) {
+                                warningElement.style.display = 'none';
+                            }
+                            
+                            // Reset warning flag
+                            faceMonitoringWarningSent = false;
+                        }
+                        
+                        // If looking away for too long, send warning record just once
+                        if (lookingAway && data.away_duration >= 8 && !faceMonitoringWarningSent) {
+                            faceMonitoringWarningSent = true;
+                            recordSecurityIssue('face-monitoring-warning', data.away_duration);
+                        }
+                        
+                        // If auto_submit flag is set to true by the server, auto-submit the quiz
+                        if (data.auto_submit && quizActive) {
+                            alert("You've been looking away for too long. Your quiz will now be submitted.");
+                            submitQuiz(true);
+                        }
+                    } catch (err) {
+                        console.error('Error processing WebSocket message:', err);
+                    }
+                };
+                
+            } catch (error) {
+                console.error('Failed to start face monitoring:', error);
+                // Continue with quiz even if face monitoring fails
+            }
+        }
+
+        // Function to show face monitoring warning
+        function showFaceMonitoringWarning() {
+            // Create warning element if it doesn't exist
+            let warningElement = document.getElementById('face-monitoring-warning');
+            if (!warningElement) {
+                warningElement = document.createElement('div');
+                warningElement.id = 'face-monitoring-warning';
+                warningElement.style.position = 'fixed';
+                warningElement.style.top = '50%';
+                warningElement.style.left = '50%';
+                warningElement.style.transform = 'translate(-50%, -50%)';
+                warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+                warningElement.style.color = 'white';
+                warningElement.style.padding = '20px 30px';
+                warningElement.style.borderRadius = '8px';
+                warningElement.style.zIndex = '2000';
+                warningElement.style.fontWeight = 'bold';
+                warningElement.style.textAlign = 'center';
+                warningElement.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+                warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
+                
+                document.body.appendChild(warningElement);
+            } else {
+                // If it already exists, make sure it's visible
+                warningElement.style.display = 'block';
+            }
+        }
+
+        // Function to stop face monitoring
+        async function stopFaceMonitoring() {
+            if (!faceMonitoringActive || !websocket) return;
+            
+            const quizId = document.getElementById('quiz-form').dataset.quizId;
+            
+            try {
+                // Close WebSocket connection
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    websocket.close();
+                }
+                
+                // Remove video feed container
+                const videoFeedContainer = document.getElementById('video-feed-container');
+                if (videoFeedContainer) {
+                    document.body.removeChild(videoFeedContainer);
+                }
+                
+                // Signal server to stop the monitoring process
+                await fetch(`/api/quiz/${quizId}/stop-monitoring`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                faceMonitoringActive = false;
+            } catch (error) {
+                console.error("Failed to stop face monitoring:", error);
+            }
+        }
+
+        // Function to update face monitoring warning with current time
+        function updateFaceMonitoringWarning(duration) {
+            const awayTimer = document.getElementById('away-timer');
+            if (awayTimer) {
+                // Round to 1 decimal place
+                const formattedDuration = Math.round(duration * 10) / 10;
+                awayTimer.textContent = formattedDuration;
+                
+                // Change warning color based on duration
+                const warningElement = document.getElementById('face-monitoring-warning');
+                if (warningElement) {
+                    // Make warning more urgent as time increases
+                    if (duration >= 7) {
+                        warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+                        warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>PLEASE LOOK AT THE SCREEN NOW!';
+                    } else if (duration >= 6) {
+                        warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.85)';
+                    }
+                }
+            }
+        }
+
+        // Face Detection End //
+
+        function cleanupQuizResources() {
+        // Stop timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        // Stop face monitoring
+        stopFaceMonitoring();
+        
+        // Stop tab focus enforcement
+        stopTabFocusEnforcement();
+        
+        // Remove event listeners
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
+    </script>
+</body>
+</html>
