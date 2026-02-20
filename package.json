@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "devStart": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:db": "node test-db.js"
   },
   "author": "",
   "license": "ISC",

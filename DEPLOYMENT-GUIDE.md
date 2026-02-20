@@ -59,20 +59,55 @@ NODE_ENV=production
 
 ## Step 3: Database Options
 
-### Option A: Free MySQL on FreeSQLDatabase.com
+### 🌟 **RECOMMENDED: Aiven Free MySQL**
+
+**Best choice for production-ready free MySQL!**
+
+1. **Sign up**: https://aiven.io/free-mysql-database
+2. **Create MySQL service**:
+   - Click "Create Service"
+   - Select **MySQL**
+   - Choose **Free Plan** (1GB storage)
+   - Select nearest region
+   - Wait 2-3 minutes for setup
+3. **Get credentials** from Overview tab:
+   ```
+   Host: mysql-xxxxx.aivencloud.com
+   Port: 12345
+   User: avnadmin
+   Password: [shown in dashboard]
+   Database: defaultdb
+   ```
+4. **Import schema**:
+   ```bash
+   mysql -h HOST -P PORT -u USER -p DATABASE < database-schema.sql
+   ```
+   Or use MySQL Workbench to import `database-schema.sql`
+
+5. **Add to Render environment variables** (see Step 2.2 above)
+
+---
+
+### Alternative Database Options:
+
+#### **Option B: Railway MySQL** ($5 free credit/month)
+1. Go to https://railway.app
+2. New Project → Provision MySQL
+3. Copy credentials from Variables tab
+4. Import schema
+
+#### **Option C: PlanetScale** (10GB free)
+1. Go to https://planetscale.com
+2. Create database → Select free tier
+3. Get connection string
+4. Import schema via web console
+
+#### **Option D: FreeSQLDatabase.com** (Quick testing)
 1. Go to https://www.freesqldatabase.com
-2. Sign up for a free MySQL database
-3. Copy the credentials to Render environment variables
+2. Fill form → Get instant credentials
+3. Use phpMyAdmin to import schema
 
-### Option B: Free MySQL on Render (Recommended)
-1. In Render dashboard, click **"New +"** → **"MySQL"**
-2. Configure free tier MySQL
-3. Copy connection details to your web service environment variables
-
-### Option C: Use Aiven (Also Free)
-1. Go to https://aiven.io
-2. Create free MySQL database (1GB free)
-3. Copy credentials
+📖 **Detailed setup guide**: See [FREE-MYSQL-SETUP.md](FREE-MYSQL-SETUP.md)
 
 ---
 
@@ -80,12 +115,30 @@ NODE_ENV=production
 
 After database is created, import your schema:
 
+### Using Command Line:
 ```bash
-# If you have a schema file
-mysql -h <HOST> -u <USER> -p<PASSWORD> <DATABASE_NAME> < your_schema.sql
+mysql -h <HOST> -P <PORT> -u <USER> -p <DATABASE_NAME> < database-schema.sql
 ```
 
-Or use phpMyAdmin/MySQL Workbench to import your tables.
+### Using MySQL Workbench:
+1. Download MySQL Workbench (free)
+2. Create new connection with your database credentials
+3. File → Run SQL Script → Select `database-schema.sql`
+4. Execute
+
+### Using phpMyAdmin:
+1. Login to phpMyAdmin (if provided by your host)
+2. Select your database
+3. Click "Import" tab
+4. Choose `database-schema.sql`
+5. Click "Go"
+
+### Test Your Database Connection:
+```bash
+npm run test:db
+```
+
+This will verify your database connection and show all tables.
 
 ---
 
