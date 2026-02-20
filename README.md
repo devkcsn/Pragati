@@ -6,7 +6,8 @@ A comprehensive web-based quiz platform with real-time face detection monitoring
 
 - **User Authentication**: Separate login systems for students and coordinators
 - **Quiz Management**: Create, edit, and manage quizzes
-- **Face Monitoring**: Real-time face detection during exams using Face-API
+- **Face Monitoring**: Real-time face detection during exams using OpenCV and Python
+- **WebSocket Integration**: Real-time monitoring with WebSocket communication
 - **Admin Dashboard**: Monitor all activities and user management
 - **Session Management**: Secure session handling
 - **Responsive Design**: Works on desktop and mobile devices
@@ -21,8 +22,11 @@ A comprehensive web-based quiz platform with real-time face detection monitoring
 - **Database**: MySQL
 - **Template Engine**: EJS
 - **Authentication**: bcrypt, express-session
-- **Face Detection**: @vladmandic/face-api
-- **Other**: Python-shell, node-cron, multer
+- **Face Detection**: Python, OpenCV (cv2), WebSockets
+- **Real-time Communication**: WebSockets, asyncio
+- **Scheduling**: node-cron
+- **File Upload**: multer
+- **Other**: Python-shell, numpy
 
 ## 📦 Installation
 
@@ -62,10 +66,15 @@ NODE_ENV=development
 
 5. Import database schema:
 ```bash
-mysql -u root -p quiz_db < create_monitoring_sessions.sql
+mysql -u root -p quiz_db < database-schema.sql
 ```
 
-6. Start the server:
+6. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+7. Start the server:
 ```bash
 # Development mode
 npm run devStart
@@ -74,7 +83,7 @@ npm run devStart
 npm start
 ```
 
-7. Open browser: `http://localhost:3000`
+8. Open browser: `http://localhost:3000`
 
 ## 📁 Project Structure
 
@@ -102,7 +111,18 @@ See `adminLoginMethod.txt` for admin credentials.
 
 See [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for detailed instructions on deploying to Render.com, Railway, or other platforms for FREE!
 
-## 📸 Screenshots
+### ⚠️ Important: Face Monitoring Note
+
+The face detection feature requires **webcam access** and will work locally but not on cloud deployments (Render, Railway, etc.) as cloud servers don't have webcams.
+
+**For Portfolio/Resume:**
+- ✅ Deploy the full backend to cloud (quiz management, auth, database)
+- ✅ Record a demo video showing face monitoring working locally
+- ✅ Include the video link and live backend URL in your resume
+
+See [PRODUCTION-NOTES.md](PRODUCTION-NOTES.md) for detailed deployment strategy.
+
+---
 
 *(Add screenshots of your application here)*
 

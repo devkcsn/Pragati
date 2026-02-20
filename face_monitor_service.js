@@ -42,8 +42,10 @@ function startMonitoring(sessionId) {
     }
 
     // Spawn Python process
+    // Use 'python3' on Linux/production, 'python' on Windows/development
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
     console.log(`Starting face monitoring at port ${port} for session ${sessionId}`);
-    const monitor = spawn('python', [scriptPath, '--host', 'localhost', '--port', port.toString()]);
+    const monitor = spawn(pythonCmd, [scriptPath, '--host', 'localhost', '--port', port.toString()]);
     
     // Store process info
     const processInfo = {
