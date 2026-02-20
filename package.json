@@ -30,10 +30,10 @@
     "node-cron": "^3.0.3",
     "npmlog": "^7.0.1",
     "python-shell": "^5.0.0",
-    "undici-types": "^7.8.0"
+    "undici-types": "^7.8.0",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
-    "dotenv": "^16.4.7",
     "nodemon": "^3.1.7"
   },
   "keywords": [],
