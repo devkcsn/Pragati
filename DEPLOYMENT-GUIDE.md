@@ -59,53 +59,47 @@ NODE_ENV=production
 
 ## Step 3: Database Options
 
-### 🌟 **RECOMMENDED: Aiven Free MySQL**
+### 🌟 **RECOMMENDED: PlanetScale (Best Free Option)**
 
-**Best choice for production-ready free MySQL!**
+**10GB storage, serverless MySQL, totally FREE!**
 
-1. **Sign up**: https://aiven.io/free-mysql-database
-2. **Create MySQL service**:
-   - Click "Create Service"
-   - Select **MySQL**
-   - Choose **Free Plan** (1GB storage)
-   - Select nearest region
-   - Wait 2-3 minutes for setup
-3. **Get credentials** from Overview tab:
-   ```
-   Host: mysql-xxxxx.aivencloud.com
-   Port: 12345
-   User: avnadmin
-   Password: [shown in dashboard]
-   Database: defaultdb
-   ```
-4. **Import schema**:
-   ```bash
-   mysql -h HOST -P PORT -u USER -p DATABASE < database-schema.sql
-   ```
-   Or use MySQL Workbench to import `database-schema.sql`
-
-5. **Add to Render environment variables** (see Step 2.2 above)
+1. **Sign up**: https://planetscale.com
+2. **Create database**:
+   - Click "Create a database"
+   - Name: `quiz-system`
+   - Region: Select nearest
+   - Plan: **Hobby (Free)** - 10GB storage
+3. **Create branch**: `main` (auto-created)
+4. **Get credentials**:
+   - Click "Connect"
+   - Framework: "General"
+   - Copy connection details
+5. **Import schema**:
+   - Use PlanetScale web console "Console" tab
+   - Or use MySQL CLI with connection string
+6. **Add to Render environment variables** (see Step 2.2 above)
 
 ---
 
 ### Alternative Database Options:
 
-#### **Option B: Railway MySQL** ($5 free credit/month)
+#### **Option B: Railway** ($5 free credit monthly)
 1. Go to https://railway.app
 2. New Project → Provision MySQL
 3. Copy credentials from Variables tab
-4. Import schema
+4. Import `database-schema.sql`
+5. **Note**: $5 credit renews monthly
 
-#### **Option C: PlanetScale** (10GB free)
-1. Go to https://planetscale.com
-2. Create database → Select free tier
-3. Get connection string
-4. Import schema via web console
+#### **Option C: Render PostgreSQL** (Free, same platform)
+1. In Render dashboard → New → PostgreSQL
+2. Free plan available
+3. Requires converting MySQL to PostgreSQL syntax
 
-#### **Option D: FreeSQLDatabase.com** (Quick testing)
+#### **Option D: FreeSQLDatabase.com** (Quick testing only)
 1. Go to https://www.freesqldatabase.com
 2. Fill form → Get instant credentials
 3. Use phpMyAdmin to import schema
+4. **Note**: Limited resources, good for testing
 
 📖 **Detailed setup guide**: See [FREE-MYSQL-SETUP.md](FREE-MYSQL-SETUP.md)
 

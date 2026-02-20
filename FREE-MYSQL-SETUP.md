@@ -4,80 +4,93 @@
 
 ---
 
-## ⭐ **Option 1: Aiven (RECOMMENDED)**
+## ⭐ **Option 1: PlanetScale (RECOMMENDED)**
 
 ### ✅ Pros:
-- **1 GB storage** free forever
-- Fast & reliable
-- Easy setup
-- SSL support
-- Good performance
+- **10 GB storage** free forever
+- Serverless MySQL (no maintenance)
+- Database branching (like Git)
+- Very fast performance
+- SSL by default
+- Easy web console
 
 ### 📝 Setup Steps:
 
-1. **Sign Up**: https://aiven.io/free-mysql-database
-2. **Create Service**:
-   - Click "Create Service"
-   - Select **MySQL**
-   - Choose **Free Plan** (1GB)
-   - Select region closest to you
-   - Click "Create Service"
-3. **Wait 2-3 minutes** for database to be ready
+1. **Sign Up**: https://planetscale.com
+2. **Create Database**:
+   - Click "Create a database"
+   - Database name: `quiz_system`
+   - Region: Select closest to you
+   - Plan: **Hobby (Free)** - 10GB
+   - Click "Create database"
+3. **Wait 1-2 minutes** for database to be ready
 4. **Get Credentials**:
-   - Click on your service
-   - Go to "Overview" tab
+   - Click "Connect"
+   - Framework: "General" or "Node.js"
    - Copy connection details:
      ```
-     Host: mysql-xxxxx.aivencloud.com
-     Port: 12345
-     User: avnadmin
-     Password: [shown in dashboard]
-     Database: defaultdb
+     Host: aws.connect.psdb.cloud
+     Username: xxxxxxxxxxxxx
+     Password: pscale_pw_xxxxx
+     Database: quiz_system
+     Port: 3306
      ```
 5. **Import Schema**:
+   - Option A: Use web console "Console" tab
+   - Option B: Use MySQL client:
    ```bash
-   mysql -h mysql-xxxxx.aivencloud.com -P 12345 -u avnadmin -p defaultdb < database-schema.sql
+   mysql -h aws.connect.psdb.cloud -u USERNAME -p quiz_system < database-schema.sql
    ```
 
 ### 🔧 Environment Variables for Render:
 ```
-DB_HOST=mysql-xxxxx.aivencloud.com
-DB_USER=avnadmin
-DB_PASSWORD=your_password_here
-DB_NAME=defaultdb
-DB_PORT=12345
+DB_HOST=aws.connect.psdb.cloud
+DB_USER=xxxxxxxxxxxxx
+DB_PASSWORD=pscale_pw_xxxxx
+DB_NAME=quiz_system
+DB_PORT=3306
 ```
 
 ---
 
-## 🚀 **Option 2: Railway (Easy Setup)**
+## 🚀 **Option 2: Railway (Super Easy)**
 
 ### ✅ Pros:
-- **$5 free credit/month**
-- Super easy setup
+- **$5 free credit/month** (renews monthly)
+- Easiest setup possible
 - Integrates with code deployment
 - Auto-backups
+- Great for full-stack projects
 
 ### 📝 Setup Steps:
 
-1. **Sign Up**: https://railway.app
+1. **Sign Up**: https://railway.app (use GitHub)
 2. **New Project** → **Provision MySQL**
-3. **Get Connection String**:
+3. **Database is ready instantly!**
+4. **Get Credentials**:
    - Click on MySQL service
    - Go to "Variables" tab
-   - Copy `MYSQL_URL` or individual credentials
-4. **Import Schema**:
-   - Use the connection string
-   - Import `database-schema.sql`
+   - Copy `MYSQL_URL` or individual variables:
+     ```
+     MYSQLHOST, MYSQLPORT, MYSQLUSER, 
+     MYSQLPASSWORD, MYSQLDATABASE
+     ```
+5. **Import Schema**:
+   ```bash
+   mysql -h HOST -P PORT -u USER -p DATABASE < database-schema.sql
+   ```
 
 ### 🔧 Environment Variables:
 ```
-DB_HOST=roundhouse.railway.internal
+DB_HOST=containers-us-west-xxx.railway.app
 DB_USER=root
 DB_PASSWORD=xxxxxxxxxxxxx
 DB_NAME=railway
 DB_PORT=3306
 ```
+
+### 💡 Tip:
+Railway can also host your entire app! Deploy both database and Node.js app on one platform.
 
 ---
 
@@ -241,21 +254,29 @@ Run: `node test-db.js`
 
 | Provider | Storage | Speed | Setup | Free Forever? |
 |----------|---------|-------|-------|---------------|
-| Aiven | 1GB | ⭐⭐⭐⭐ | Easy | ✅ Yes |
-| Railway | $5/mo | ⭐⭐⭐⭐⭐ | Very Easy | 💵 Credits |
-| FreeSQLDatabase | 5MB | ⭐⭐ | Instant | ✅ Yes |
-| PlanetScale | 10GB | ⭐⭐⭐⭐⭐ | Medium | ✅ Yes |
+| **PlanetScale** | **10GB** | ⭐⭐⭐⭐⭐ | Easy | ✅ **Yes** |
+| Railway | $5/mo credit | ⭐⭐⭐⭐⭐ | Very Easy | 💵 Monthly Credits |
+| FreeSQLDatabase | 5MB | ⭐⭐ | Instant | ✅ Yes (Limited) |
 | Render PostgreSQL | 1GB | ⭐⭐⭐⭐ | Easy | ✅ Yes |
+| Clever Cloud | 256MB | ⭐⭐⭐ | Medium | ✅ Yes |
 
 ---
 
 ## 🎯 **My Recommendation**
 
-For your project, use **Aiven** or **PlanetScale**:
-- Both are free forever
-- Good performance
-- Reliable uptime
-- Easy setup
+For your project, use **PlanetScale** (Best) or **Railway** (Easiest):
+
+**PlanetScale:**
+- ✅ 10GB free storage (most generous)
+- ✅ Free forever
+- ✅ Serverless (auto-scaling)
+- ✅ Best performance
+
+**Railway:**
+- ✅ Easiest setup (1-click MySQL)
+- ✅ $5 monthly credit (enough for hobby projects)
+- ✅ Can host both app + database
+- ✅ Great developer experience
 
 ---
 
