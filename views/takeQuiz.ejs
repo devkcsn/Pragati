@@ -7,6 +7,8 @@
     <link rel="icon" href="/assets/images/pragati_icon.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -252,11 +254,13 @@
         let tabFocusInterval; // For preventing tab switching
 
         //Face detection variables
-        let websocket;
         let faceMonitoringActive = false;
         let lookingAwayStartTime = null;
         let lookingAway = false;
         let faceMonitoringWarningSent = false;
+        let videoElement = null;
+        let faceTrackerInterval = null;
+        let faceModel = null;
 
         // Start everything when page loads
         document.addEventListener('DOMContentLoaded', () => {
@@ -759,34 +763,18 @@
             }
         }
 
-        //Face Detection WebSocket connection
+        // Face Detection (Browser-side using TensorFlow.js)
 
-        // This function to establish WebSocket connection to the face monitoring server
         async function startFaceMonitoring() {
-            const quizId = document.getElementById('quiz-form').dataset.quizId;
-            
             try {
-                // First start the monitoring service on the server
-                const response = await fetch(`/api/quiz/${quizId}/start-monitoring`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to start face monitoring service');
+                // Initialize model if not already loaded
+                if (!faceModel) {
+                    console.log('Loading face detection model...');
+                    faceModel = await blazeface.load();
+                    console.log('Model loaded');
                 }
-                
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error('Server declined to start face monitoring');
-                }
-                
-                // Connect to the WebSocket with the assigned port
-                const websocketPort = data.websocketPort;
-                websocket = new WebSocket(`ws://localhost:${websocketPort}`);
-                
-                // Create video feed container if it doesn't exist
+
+                // Create video container if missing
                 let videoFeedContainer = document.getElementById('video-feed-container');
                 if (!videoFeedContainer) {
                     videoFeedContainer = document.createElement('div');
@@ -800,96 +788,94 @@
                     videoFeedContainer.style.borderRadius = '5px';
                     videoFeedContainer.style.overflow = 'hidden';
                     videoFeedContainer.style.zIndex = '1000';
-                    
-                    // Add the container to the body
+                    videoFeedContainer.style.backgroundColor = '#000';
                     document.body.appendChild(videoFeedContainer);
+                    
+                    videoElement = document.createElement('video');
+                    videoElement.id = 'video-feed';
+                    videoElement.autoplay = true;
+                    videoElement.muted = true;
+                    videoElement.playsInline = true;
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '100%';
+                    videoElement.style.objectFit = 'cover';
+                    videoFeedContainer.appendChild(videoElement);
                 }
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 320, height: 240, facingMode: "user" },
+                    audio: false
+                });
                 
-                // Set up WebSocket event handlers
-                websocket.onopen = function() {
-                    console.log('Face monitoring WebSocket connected');
-                    faceMonitoringActive = true;
+                videoElement.srcObject = stream;
+                faceMonitoringActive = true;
+
+                // Start the detection loop once video starts playing
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play();
+                    startDetectionLoop();
                 };
-                
-                websocket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                    recordSecurityIssue('face-monitoring-failed');
-                };
-                
-                websocket.onclose = function() {
-                    console.log('Face monitoring WebSocket closed');
-                    faceMonitoringActive = false;
-                };
-                
-                websocket.onmessage = function(event) {
-                    try {
-                        const data = JSON.parse(event.data);
-                        
-                        // Update video feed
-                        if (data.image) {
-                            const videoFeed = document.getElementById('video-feed') || document.createElement('img');
-                            videoFeed.id = 'video-feed';
-                            videoFeed.src = 'data:image/jpeg;base64,' + data.image;
-                            videoFeed.style.width = '100%';
-                            videoFeed.style.height = '100%';
-                            videoFeedContainer.innerHTML = '';
-                            videoFeedContainer.appendChild(videoFeed);
-                        }
-                        
-                        // Track looking away status
-                        if ((data.looking_away && data.early_warning) && !lookingAway) {
-                            // Just started looking away beyond the early warning threshold (4 seconds)
-                            lookingAway = true;
-                            lookingAwayStartTime = Date.now();
-                            showFaceMonitoringWarning();
-                        } else if ((data.looking_away && data.early_warning) && lookingAway) {
-                            // Still looking away, update timer
-                            updateFaceMonitoringWarning(data.away_duration);
-                        } else if (!data.looking_away && lookingAway) {
-                            // Just returned to looking at screen
-                            lookingAway = false;
-                            
-                            // If they were looking away for more than 5 seconds, record it
-                            const lookingAwayDuration = (Date.now() - lookingAwayStartTime) / 1000;
-                            if (lookingAwayDuration > 5) {
-                                recordSecurityIssue('looking-away', lookingAwayDuration);
-                            }
-                            
-                            // Hide warning popup
-                            const warningElement = document.getElementById('face-monitoring-warning');
-                            if (warningElement) {
-                                warningElement.style.display = 'none';
-                            }
-                            
-                            // Reset warning flag
-                            faceMonitoringWarningSent = false;
-                        }
-                        
-                        // If looking away for too long, send warning record just once
-                        if (lookingAway && data.away_duration >= 8 && !faceMonitoringWarningSent) {
-                            faceMonitoringWarningSent = true;
-                            recordSecurityIssue('face-monitoring-warning', data.away_duration);
-                        }
-                        
-                        // If auto_submit flag is set to true by the server, auto-submit the quiz
-                        if (data.auto_submit && quizActive) {
-                            alert("You've been looking away for too long. Your quiz will now be submitted.");
-                            submitQuiz(true);
-                        }
-                    } catch (err) {
-                        console.error('Error processing WebSocket message:', err);
-                    }
-                };
-                
+
             } catch (error) {
                 console.error('Failed to start face monitoring:', error);
-                // Continue with quiz even if face monitoring fails
+                recordSecurityIssue('face-monitoring-failed');
             }
         }
 
-        // Function to show face monitoring warning
+        function startDetectionLoop() {
+            if (!faceMonitoringActive) return;
+
+            faceTrackerInterval = setInterval(async () => {
+                if (!faceMonitoringActive || !faceModel || !videoElement) return;
+
+                const predictions = await faceModel.estimateFaces(videoElement, false);
+                const isLookingAway = predictions.length === 0;
+
+                if (isLookingAway) {
+                    if (!lookingAway) {
+                        // Just started looking away
+                        lookingAway = true;
+                        lookingAwayStartTime = Date.now();
+                    } else {
+                        // Still looking away, calculate duration (seconds)
+                        const awayDuration = (Date.now() - lookingAwayStartTime) / 1000;
+
+                        if (awayDuration >= 4) {
+                            showFaceMonitoringWarning();
+                            updateFaceMonitoringWarning(awayDuration);
+                        }
+
+                        // Send severe record once after 8 seconds
+                        if (awayDuration >= 8 && !faceMonitoringWarningSent) {
+                            faceMonitoringWarningSent = true;
+                            recordSecurityIssue('face-monitoring-warning', awayDuration);
+                            
+                            // Auto submit if looking away too long while quiz is fully active
+                            if (quizActive) {
+                                alert("You've been looking away for too long. Your quiz will now be submitted.");
+                                submitQuiz(true);
+                            }
+                        }
+                    }
+                } else {
+                    if (lookingAway) {
+                        // Returned to looking
+                        const awayDuration = (Date.now() - lookingAwayStartTime) / 1000;
+                        if (awayDuration > 5) {
+                            recordSecurityIssue('looking-away', awayDuration);
+                        }
+                        
+                        // Reset
+                        lookingAway = false;
+                        faceMonitoringWarningSent = false;
+                        const warningElement = document.getElementById('face-monitoring-warning');
+                        if (warningElement) warningElement.style.display = 'none';
+                    }
+                }
+            }, 500); // Check every 500ms
+        }
+
         function showFaceMonitoringWarning() {
-            // Create warning element if it doesn't exist
             let warningElement = document.getElementById('face-monitoring-warning');
             if (!warningElement) {
                 warningElement = document.createElement('div');
@@ -907,56 +893,20 @@
                 warningElement.style.textAlign = 'center';
                 warningElement.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
                 warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>NO FACE DETECTED<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">0</span> seconds<br>Please look at the screen!';
-                
                 document.body.appendChild(warningElement);
             } else {
-                // If it already exists, make sure it's visible
                 warningElement.style.display = 'block';
             }
         }
 
-        // Function to stop face monitoring
-        async function stopFaceMonitoring() {
-            if (!faceMonitoringActive || !websocket) return;
-            
-            const quizId = document.getElementById('quiz-form').dataset.quizId;
-            
-            try {
-                // Close WebSocket connection
-                if (websocket && websocket.readyState === WebSocket.OPEN) {
-                    websocket.close();
-                }
-                
-                // Remove video feed container
-                const videoFeedContainer = document.getElementById('video-feed-container');
-                if (videoFeedContainer) {
-                    document.body.removeChild(videoFeedContainer);
-                }
-                
-                // Signal server to stop the monitoring process
-                await fetch(`/api/quiz/${quizId}/stop-monitoring`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                faceMonitoringActive = false;
-            } catch (error) {
-                console.error("Failed to stop face monitoring:", error);
-            }
-        }
-
-        // Function to update face monitoring warning with current time
         function updateFaceMonitoringWarning(duration) {
             const awayTimer = document.getElementById('away-timer');
             if (awayTimer) {
-                // Round to 1 decimal place
                 const formattedDuration = Math.round(duration * 10) / 10;
                 awayTimer.textContent = formattedDuration;
                 
-                // Change warning color based on duration
                 const warningElement = document.getElementById('face-monitoring-warning');
                 if (warningElement) {
-                    // Make warning more urgent as time increases
                     if (duration >= 7) {
                         warningElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
                         warningElement.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px; display: block;"></i>WARNING: AUTO-SUBMIT IMMINENT<br><span id="away-timer" style="font-size: 24px; display: block; margin: 10px 0;">' + formattedDuration + '</span> seconds<br>PLEASE LOOK AT THE SCREEN NOW!';
@@ -967,7 +917,26 @@
             }
         }
 
-        // Face Detection End //
+        async function stopFaceMonitoring() {
+            if (!faceMonitoringActive) return;
+            faceMonitoringActive = false;
+            
+            if (faceTrackerInterval) {
+                clearInterval(faceTrackerInterval);
+                faceTrackerInterval = null;
+            }
+
+            if (videoElement && videoElement.srcObject) {
+                const tracks = videoElement.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                videoElement.srcObject = null;
+            }
+
+            const videoFeedContainer = document.getElementById('video-feed-container');
+            if (videoFeedContainer) {
+                document.body.removeChild(videoFeedContainer);
+            }
+        }
 
         function cleanupQuizResources() {
         // Stop timer

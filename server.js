@@ -2,7 +2,7 @@
 const express = require('express'); // For creating the server
 const session = require('express-session'); // For session management
 const bodyParser = require('body-parser'); // For parsing request bodies
-const bcrypt = require('bcrypt'); // For password hashing
+const bcrypt = require('bcryptjs'); // For password hashing
 const app = express(); // Create an Express application
 const fsPromises = require('fs').promises; // For file system operations
 const cron = require('node-cron'); // For scheduling tasks
@@ -12,7 +12,8 @@ const fs = require('fs'); // For file system operations
 require('dotenv').config(); // Load environment variables
 
 // Middleware setup 
-app.use(cors());
+app.set('trust proxy', 1); // Trust first proxy for cloud deployment (Render/Railway)
+app.use(cors({ origin: '*' })); // Allow requests from Vercel frontend
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -47,6 +48,7 @@ const pool = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT || 3306,
+    ssl: process.env.DB_HOST && process.env.DB_HOST.includes('localhost') ? undefined : { rejectUnauthorized: false }
 });
 
 // Registration route -- This route handles the registration of both students and coordinators
@@ -285,10 +287,16 @@ app.post("/loginCoordinator", async (req, res) => {
 
 // Face detection logic start // 
 const faceMonitorRouter = express.Router();
-const faceMonitor = require('./face_monitor_service');
+let faceMonitor;
+try {
+    faceMonitor = require('./face_monitor_service');
+} catch (e) {
+    console.warn("Face monitor service could not be loaded. It will be disabled.", e.message);
+}
 
 // Start face monitoring for a quiz session
 faceMonitorRouter.post('/api/quiz/:id/start-monitoring', isAuthenticated, async (req, res) => {
+    if (!faceMonitor) return res.json({ success: false, message: "Face monitoring service unavailable on this server" });
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
@@ -316,6 +324,7 @@ faceMonitorRouter.post('/api/quiz/:id/start-monitoring', isAuthenticated, async 
 
 // Stop face monitoring for a quiz session
 faceMonitorRouter.post('/api/quiz/:id/stop-monitoring', isAuthenticated, async (req, res) => {
+    if (!faceMonitor) return res.json({ success: false });
     if (req.session.user.role !== 'student') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
